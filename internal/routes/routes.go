@@ -6,6 +6,9 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/vladwithcode/juzgados/internal/reader"
@@ -15,16 +18,16 @@ func NewRouter() http.Handler {
 	router := httprouter.New()
 
 	router.GET("/", indexHandler)
-	router.GET("/api/data/:name", apiDataHandler)
 	router.GET("/api/file", getFile)
 	router.GET("/api/case", searchCase)
+
+	router.NotFound = http.FileServer(http.Dir("web/static"))
 
 	return router
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	// fmt.Fprintln(w, "Welcome to homepage!")
-	templ, err := template.ParseFiles("internal/templates/layout.html")
+	templ, err := template.ParseFiles("web/templates/layout.html")
 
 	if err != nil {
 		fmt.Println(err)
@@ -34,12 +37,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	templ.Execute(w, nil)
 }
 
-func apiDataHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "This string appends the `name` param: Your name is %s", ps.ByName("name"))
-}
-
 func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	content, err := reader.Reader()
+	content, err := reader.Reader("4122023", "civ2")
 
 	if err != nil {
 		fmt.Println(err)
@@ -50,11 +49,27 @@ func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	pdfContent, err := reader.Reader()
+	date := r.URL.Query().Get("date")
+	caseType := r.URL.Query().Get("type")
+
+	dateSegments := strings.Split(date, "-")
+	dateAsInt, err := strconv.Atoi(dateSegments[2])
 
 	if err != nil {
 		fmt.Println(err)
-		respondWithError(w, 500, "Couldn't read pdf")
+		respondWithError(w, 400, "La fecha es inválida")
+		return
+	}
+
+	date = strconv.Itoa(dateAsInt) + dateSegments[1] + dateSegments[0]
+
+	pdfContent, err := reader.Reader(date, caseType)
+
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
 	}
 
 	caseId := r.URL.Query().Get("id")
@@ -62,34 +77,64 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	if err != nil {
 		fmt.Println(err)
-		respondWithError(w, 500, "Provided case isn't valid")
+		respondWithError(w, 500, "Se introdujo un caso inválido")
 		return
 	}
-
-	fmt.Printf("searchExp: %v\n", searchExp)
 
 	idx := searchExp.FindIndex(*pdfContent)
 
-	fmt.Printf("Index found: %v\n", idx)
-
 	if len(idx) == 0 {
-		respondWithError(w, 500, "Didn't find case")
+		respondWithError(w, 500, "No se encontró información sobre el caso solicitado")
 		return
 	}
+
+	start, end := idx[0], idx[1]
 
 	type successResponse struct {
 		Index   string `json:"index"`
 		Content string `json:"content"`
 	}
 
-	contentAsStr := string(*pdfContent)
+	contentAsStr := []byte(*pdfContent)[start:end]
 
-	w.WriteHeader(200)
-	w.Write([]byte(contentAsStr)[idx[0]:idx[1]])
-	// respondWithJSON(w, 200, successResponse{
-	// 	Index:   fmt.Sprint(idx[0]),
-	// 	Content: contentAsStr[idx[0]:idx[1]],
-	// })
+	lineExp := regexp.MustCompile("(?m)\n")
+	spaceExp := regexp.MustCompile(" {2,}")
+	rows := lineExp.Split(string(contentAsStr), -1)
+	var data = map[string]string{
+		"idx":    "",
+		"case":   "",
+		"nature": "",
+		"accord": "",
+	}
+
+	for i, str := range rows {
+		cols := spaceExp.Split(str, -1)
+
+		if i == 0 {
+			data["idx"] = cols[0]
+			data["case"] = cols[1]
+			data["nature"] = cols[2]
+			data["accord"] = cols[3]
+			continue
+		}
+
+		if len(cols) > 2 {
+			data["nature"] = data["nature"] + "\n" + cols[1]
+			data["accord"] = data["accord"] + "\n" + cols[2]
+			continue
+		}
+
+		data["accord"] = data["accord"] + "\n" + cols[1]
+	}
+
+	rowTempl, err := template.ParseFiles("web/templates/table-row.html")
+
+	if err != nil {
+		fmt.Println(err)
+		respondWithError(w, 500, "Couldn't parse row")
+	}
+
+	rowTempl.Execute(w, data)
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
