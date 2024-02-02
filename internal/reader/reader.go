@@ -1,10 +1,12 @@
 package reader
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -41,8 +43,48 @@ func GetFile(date, caseType string) (pdfData []byte, err error) {
 	return pdfData, nil
 }
 
+func PipeLargeFile(fileData []byte) (*[]byte, error) {
+	pr, pw, _ := os.Pipe()
+	outPr, outPw, _ := os.Pipe()
+	outputBuf := new(bytes.Buffer)
+
+	pttCmd := exec.Command("pdftotext", "-layout", "-", "-")
+
+	pttCmd.Stdin = pr
+	pttCmd.Stdout = outPw
+
+	if err := pttCmd.Start(); err != nil {
+		fmt.Println("Error starting: ", err)
+		return nil, err
+	}
+
+	go func() {
+		defer pw.Close()
+
+		pw.Write(fileData)
+	}()
+
+	go func() {
+		defer outPr.Close()
+
+		outputBuf.ReadFrom(outPr)
+	}()
+
+	if err := pttCmd.Wait(); err != nil {
+		return nil, err
+	}
+
+	data := outputBuf.Bytes()
+
+	return &data, nil
+}
+
 // Uses poppler-utils' pdftotext to parse the pdf
 func ParseFile(fileData []byte) (*[]byte, error) {
+	if len(fileData) > 65_000 {
+		return PipeLargeFile(fileData)
+	}
+
 	// $ pdftotext [options] [PDF-File [text-file]]
 	// If text-file is '-'. "-" means pipe from/to stdin/stdout
 	pttCmd := exec.Command("pdftotext", "-layout", "-", "-")

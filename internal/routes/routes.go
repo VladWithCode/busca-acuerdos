@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,11 +46,23 @@ func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	content, err := reader.Reader("4122023", "civ2")
+	caseType := r.URL.Query().Get("type")
+	date := r.URL.Query().Get("date")
+
+	segments := strings.Split(date, "-")
+
+	day, _ := strconv.Atoi(segments[2])
+	month, _ := strconv.Atoi(segments[1])
+
+	date = fmt.Sprintf("%d%d%s", day, month, segments[0])
+	fmt.Printf("date: %v\n", date)
+
+	content, err := reader.Reader(date, caseType)
 
 	if err != nil {
 		fmt.Println(err)
 		respondWithError(w, 500, "Couldn't read file")
+		return
 	}
 
 	fmt.Fprintln(w, string(*content))
@@ -102,6 +116,7 @@ func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh cha
 		if err != nil {
 			if i == 13 {
 				fmt.Printf("%d [FindInPast err]: %v\n", i, err)
+				break
 			}
 
 			startDate = startDate.Local().AddDate(0, 0, -1)
@@ -110,12 +125,9 @@ func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh cha
 		}
 
 		resultDoc = tsj.DataToDoc(contentAsStr)
-		// Here it sends the Doc resulting from DataToDoc
-		responseCh <- resultDoc
-		return
+		break
 	}
 
-	// Here it sends the empty Doc
 	responseCh <- resultDoc
 }
 
