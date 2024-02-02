@@ -7,18 +7,24 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var Pool *pgxpool.Pool
+var DB *pgxpool.Pool
 
 func Connect() (*pgxpool.Pool, error) {
-    if Pool != nil {
-        return Pool, nil
-    }
+	var err error
+	DB, err = pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		return nil, err
+	}
 
-    Pool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
-    if err != nil {
-        return nil, err
-    }
-
-    return Pool, nil
+	return DB, nil
 }
 
+func GetPool() (*pgxpool.Conn, error) {
+	conn, err := DB.Acquire(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
+}
