@@ -100,7 +100,9 @@ func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh cha
 		contentAsStr, err := tsj.FetchAndReadDoc(caseID, searchDate, caseType)
 
 		if err != nil {
-			fmt.Printf("[FindInPast err]: %v\n", err)
+			if i == 13 {
+				fmt.Printf("%d [FindInPast err]: %v\n", i, err)
+			}
 
 			startDate = startDate.Local().AddDate(0, 0, -1)
 
