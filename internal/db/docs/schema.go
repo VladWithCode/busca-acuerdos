@@ -9,4 +9,5 @@ type Doc struct {
 	NatureCode string    `json:"natureCode"`
 	Accord     string    `json:"accord"`
 	AccordDate time.Time `json:"accordDate"`
+	FullText   string    `json:"fullText"`
 }

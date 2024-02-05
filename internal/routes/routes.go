@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,6 +23,8 @@ import (
 func NewRouter() http.Handler {
 	router := httprouter.New()
 
+	router.GET("/test", testFn)
+
 	router.GET("/", indexHandler)
 	router.GET("/api/docs", getDocs)
 	router.POST("/api/docs", createDoc)
@@ -32,6 +36,28 @@ func NewRouter() http.Handler {
 	router.NotFound = http.FileServer(http.Dir("web/static"))
 
 	return router
+}
+
+func testFn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	exp, err := regexp.Compile(`(?m)^(\d[^\n]*00045/2011[^\n][^\d]*)$`)
+
+	if err != nil {
+		fmt.Println(err)
+		respondWithError(w, 500, "Error")
+		return
+	}
+
+	fmt.Printf("exp: %v\n", exp)
+
+	testStr, _ := os.ReadFile("test.txt")
+
+	matches := exp.Find(testStr)
+
+	fmt.Printf("matches: %s\n", matches)
+
+	respondWithJSON(w, 200, struct {
+		Status string `json:"status"`
+	}{Status: "OK"})
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -48,6 +74,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	caseType := r.URL.Query().Get("type")
 	date := r.URL.Query().Get("date")
+
+	if date == "" || caseType == "" {
+		respondWithError(w, 400, "La fecha y caso son requeridas")
+		return
+	}
 
 	segments := strings.Split(date, "-")
 
@@ -107,14 +138,14 @@ func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh cha
 
 	resultDoc := &db.Doc{}
 
-	for i := 0; i < 14; i++ {
+	for i := 0; i < 31; i++ {
 		year, month, date := startDate.Date()
 		searchDate := fmt.Sprintf("%d%d%d", date, month, year)
 
 		contentAsStr, err := tsj.FetchAndReadDoc(caseID, searchDate, caseType)
 
 		if err != nil {
-			if i == 13 {
+			if i == 30 {
 				fmt.Printf("%d [FindInPast err]: %v\n", i, err)
 				break
 			}
@@ -150,13 +181,6 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	wg.Wait()
 
-	rowTempl, err := template.ParseFiles("web/templates/table-row.html")
-
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(w, 500, "Couldn't parse row")
-	}
-
 	// Read & close dbDocCh
 	dbDoc := <-dbDocCh
 	close(dbDocCh)
@@ -176,14 +200,20 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 		fetchDoc = <-fetchDocCh
 
-		if *fetchDoc == (db.Doc{}) {
-			respondWithError(w, 404, "No se encontró información del expediente solicitado en los ultimos 14 días")
+		if *fetchDoc == (empDoc) {
+			respondWithError(w, 404, "No se encontró información del expediente solicitado en el ultimo mes")
 			return
 		}
 
 		doc = fetchDoc
 	}
 
+	rowTempl, err := template.ParseFiles("web/templates/table-row.html")
+
+	if err != nil {
+		fmt.Println(err)
+		respondWithError(w, 500, "Couldn't parse row")
+	}
 	rowTempl.Execute(w, *doc)
 }
 

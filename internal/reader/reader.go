@@ -9,14 +9,13 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strings"
 )
 
 const fileUrl = "http://tsjdgo.gob.mx/Recursos/images/flash/ListasAcuerdos/%v/%v.pdf"
 
 func GenRegExp(caseId string) (*regexp.Regexp, error) {
-	id := strings.Replace(caseId, "/", `\/`, 1)
-	return regexp.Compile(fmt.Sprintf(`(?m)^(\d[^\n]*%v[^\n][^\d]*)$`, id))
+	//id := strings.Replace(caseId, "/", `\/`, 1)
+	return regexp.Compile(fmt.Sprintf(`(?m)^(\d[^\n]*%v[^\n][^\d]*)$`, caseId))
 }
 
 func GetFile(date, caseType string) (pdfData []byte, err error) {
