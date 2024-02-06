@@ -81,7 +81,7 @@ func DataToDoc(data []byte) *db.Doc {
 				break
 			}
 
-			if seenTwoSpace && char != ' ' {
+			if seenTwoSpace && char != ' ' && currentCol < 3 {
 				currentCol++
 				seenTwoSpace = false
 				prevChar = 0
@@ -101,7 +101,7 @@ func DataToDoc(data []byte) *db.Doc {
 			colLen := len(tempCols[currentCol])
 			maxLen := getColMaxLength(currentCol)
 
-			if char == ' ' && str[ensureSafeIndex(j+1, len(str))] != ' ' && colLen >= maxLen {
+			if char == ' ' && str[ensureSafeIndex(j+1, len(str))] != ' ' && colLen >= maxLen && currentCol < 3 {
 				currentCol++
 				seenTwoSpace = false
 				prevChar = 0
@@ -124,7 +124,7 @@ func DataToDoc(data []byte) *db.Doc {
 			// 	"Row %d; Col %d; ColLen: %d; Char: %s; MaxLen: %d; prevChar: %s; seenTwoSpace: %t; charCounts: %+v\n\n",
 			// 	i,
 			// 	currentCol,
-			// 	len(cols[currentCol]),
+			// 	len(tempCols[currentCol]),
 			// 	string(char),
 			// 	getColMaxLength(currentCol),
 			// 	string(prevChar),
