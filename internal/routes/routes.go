@@ -132,7 +132,8 @@ func waitForFetchDoc(wg *sync.WaitGroup, caseID, searchDate, caseType string, re
 	responseCh <- doc
 }
 
-func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh chan<- *db.Doc) {
+func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh chan<- *db.Doc, dateCh chan<- *time.Time) {
+
 	// Set Date to previous day
 	startDate = startDate.Local().AddDate(0, 0, -1)
 
@@ -159,7 +160,10 @@ func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh cha
 		break
 	}
 
+	fmt.Printf("startDate: %v\n", startDate)
+
 	responseCh <- resultDoc
+	dateCh <- &startDate
 }
 
 func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -193,12 +197,18 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		doc = fetchDoc
 		// Since we alredy got the doc we can close fetchDocCh
 		close(fetchDocCh)
+
+		doc.AccordDate = startDate
+		doc.NatureCode = caseType
 	} else if empDoc != *dbDoc {
 		doc = dbDoc
+		doc.NatureCode = caseType
 	} else {
-		go findCaseInPast(startDate, caseID, caseType, fetchDocCh)
+		dateCh := make(chan *time.Time)
+		go findCaseInPast(startDate, caseID, caseType, fetchDocCh, dateCh)
 
 		fetchDoc = <-fetchDocCh
+		accordDate := <-dateCh
 
 		if *fetchDoc == (empDoc) {
 			respondWithError(w, 404, "No se encontró información del expediente solicitado en el ultimo mes")
@@ -206,14 +216,25 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		}
 
 		doc = fetchDoc
+
+		doc.AccordDate = *accordDate
+		doc.NatureCode = caseType
 	}
 
-	rowTempl, err := template.ParseFiles("web/templates/table-row.html")
+	rowTempl, err := template.New("table-row.html").Funcs(template.FuncMap{
+		"FormatDate": func(date time.Time) string {
+			return fmt.Sprintf("%d-%d-%d", date.Day(), date.Month(), date.Year())
+		},
+		"Trim": func(str string) string {
+			return strings.TrimSpace(str)
+		},
+	}).ParseFiles("web/templates/table-row.html")
 
 	if err != nil {
 		fmt.Println(err)
 		respondWithError(w, 500, "Couldn't parse row")
 	}
+
 	rowTempl.Execute(w, *doc)
 }
 

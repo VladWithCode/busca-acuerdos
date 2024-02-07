@@ -140,10 +140,10 @@ func DataToDoc(data []byte) *db.Doc {
 		cols[2] = append(cols[2], tempCols[2]...)
 		cols[3] = append(cols[3], tempCols[3]...)
 
-		cols[0] = append(cols[0], '\n')
-		cols[1] = append(cols[1], '\n')
-		cols[2] = append(cols[2], '\n')
-		cols[3] = append(cols[3], '\n')
+		// cols[0] = append(cols[0], '\n')
+		// cols[1] = append(cols[1], '\n')
+		// cols[2] = append(cols[2], '\n')
+		// cols[3] = append(cols[3], '\n')
 	}
 
 	doc.Case = string(cols[1])

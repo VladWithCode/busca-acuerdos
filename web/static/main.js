@@ -5,3 +5,4 @@ document.addEventListener("DOMContentLoaded", () => {
         alert(message || "Ocurrio un error al recuperar el expediente solicitado.")
     })
 })
+

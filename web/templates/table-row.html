@@ -1,5 +1,23 @@
-<div class="bg-stone-50 col-span-2 border border-zinc-400 p-2 border-t-0">1</div>
-<div class="bg-stone-50 col-span-2 border border-zinc-400 p-2 border-t-0 border-l-0">{{.Case}}</div>
-<div class="bg-stone-50 col-span-4 border border-zinc-400 p-2 border-t-0 border-l-0">{{.Nature}}</div>
-<div class="bg-stone-50 col-span-4 border border-zinc-400 p-2 border-t-0 border-l-0">{{.Accord}}</div>
+<div class="bg-stone-50 col-span-3 border border-zinc-400 p-2 border-t-0 md:col-span-2">{{FormatDate .AccordDate}}</div>
+<div class="bg-stone-50 col-span-3 border border-zinc-400 p-2 border-t-0 border-l-0 md:col-span-2">{{.Case}}</div>
+<div class="bg-stone-50 col-span-3 border border-zinc-400 p-2 border-t-0 border-l-0 md:col-span-4">{{.Nature}}</div>
+<div class="hidden bg-stone-50 col-span-4 border border-zinc-400 p-2 border-t-0 border-l-0 uppercase md:block">{{.Accord}}</div>
+<div
+    class="bg-stone-50 col-span-3 border border-zinc-400 p-2 border-t-0 border-l-0 text-teal-500 uppercase flex justify-center items-center underline underline-offset-2 md:hidden"
+    data-read-accord="{{printf "%s-%s" (Trim .Case) .NatureCode }}"
+    @click="$el.nextElementSibling.classList.remove('hidden')"
+    >Leer</div>
+
+<div
+    class="bg-stone-50 w-4/5 border border-zinc-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded hidden"
+    data-accord-id="{{printf "%s-%s" (Trim .Case) .NatureCode }}"
+    @mousedown.outside="$el.classList.add('hidden')"
+    >
+    <div class="flex justify-between items-center bg-stone-100 py-2 px-4 leading-normal border-b border-zinc-400">
+        <p class="text-lg font-medium">Acuerdo</p>
+        <button class="font-bold text-xl" @click="$el.parentElement.parentElement.classList.add('hidden')">&times;</button>
+    </div>
+    <p class="text-center text-sm font-medium py-2">{{Trim .Case}} {{Trim .Nature}}</p>
+    <div class="text-base px-4 pb-2">{{Trim .Accord}}</div>
+</div>
 
