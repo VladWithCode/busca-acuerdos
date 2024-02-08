@@ -30,6 +30,7 @@ func NewRouter() http.Handler {
 	router.POST("/api/docs", createDoc)
 	router.GET("/api/file", getFile)
 	router.GET("/api/case", searchCase)
+	router.GET("/api/cases", searchCases)
 	router.GET("/api/docs-by-case/:caseID", getDocByCase)
 	router.GET("/api/docs/:ID", getDocByID)
 
@@ -147,7 +148,6 @@ func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh cha
 
 		if err != nil {
 			if i == 30 {
-				fmt.Printf("%d [FindInPast err]: %v\n", i, err)
 				break
 			}
 
@@ -160,10 +160,14 @@ func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh cha
 		break
 	}
 
-	fmt.Printf("startDate: %v\n", startDate)
+	if empDoc := (db.Doc{}); *resultDoc == empDoc {
+		responseCh <- &empDoc
+		return
+	}
 
-	responseCh <- resultDoc
 	dateCh <- &startDate
+	resultDoc.AccordDate = startDate
+	responseCh <- resultDoc
 }
 
 func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -233,9 +237,68 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if err != nil {
 		fmt.Println(err)
 		respondWithError(w, 500, "Couldn't parse row")
+		return
 	}
 
 	rowTempl.Execute(w, *doc)
+}
+
+func searchCases(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	cases := r.URL.Query()["cases"]
+	resultsCh := make(chan *db.Doc, len(cases))
+	var resultDocs []db.Doc
+
+	// Since findCaseInPast starts the day before use tomorrows date
+	// TODO: change findCaseInPast to use the date supplied
+	startDate := time.Now().Local().AddDate(0, 0, 1)
+
+	for _, c := range cases {
+		fakeCh := make(chan *time.Time, 5)
+
+		params := strings.Split(c, "+")
+
+		go func() {
+			findCaseInPast(startDate, params[0], params[1], resultsCh, fakeCh)
+		}()
+	}
+
+	for res := range resultsCh {
+		resultDocs = append(resultDocs, *res)
+
+		if len(resultDocs) == len(cases) {
+			break
+		}
+	}
+
+	emptyCount := 0
+	for _, doc := range resultDocs {
+		if doc == (db.Doc{}) {
+			emptyCount++
+		}
+	}
+
+	if emptyCount == 5 {
+		respondWithError(w, 500, "No se encontró ningun documento solicitado")
+		return
+	}
+
+	templ, err := template.New("table-rows.html").Funcs(template.FuncMap{
+		"FormatDate": func(date time.Time) string {
+			return fmt.Sprintf("%d-%d-%d", date.Day(), date.Month(), date.Year())
+		},
+		"Trim": func(str string) string {
+			return strings.TrimSpace(str)
+		},
+	}).ParseFiles("web/templates/table-rows.html")
+
+	if err != nil {
+		fmt.Println(err)
+		respondWithError(w, 500, "Couldn't parse row")
+
+		return
+	}
+
+	templ.Execute(w, resultDocs)
 }
 
 func getDocByCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
