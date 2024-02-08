@@ -277,7 +277,7 @@ func searchCases(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		}
 	}
 
-	if emptyCount == 5 {
+	if emptyCount == len(cases) {
 		respondWithError(w, 500, "No se encontró ningun documento solicitado")
 		return
 	}
