@@ -4,15 +4,23 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/vladwithcode/juzgados/internal/db"
 )
+
+type Doc struct {
+	ID         string    `json:"id"`
+	Case       string    `json:"caseId"`
+	Nature     string    `json:"nature"`
+	NatureCode string    `json:"natureCode"`
+	Accord     string    `json:"accord"`
+	AccordDate time.Time `json:"accordDate"`
+	FullText   string    `json:"fullText"`
+}
 
 func FetchDocForCase(caseID string) {
 }
 
 func GetDocs() ([]Doc, error) {
-	conn, err := db.GetPool()
+	conn, err := GetPool()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -50,7 +58,7 @@ func GetDocs() ([]Doc, error) {
 }
 
 func GetDocByID(id string) (*Doc, error) {
-	conn, err := db.GetPool()
+	conn, err := GetPool()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -72,7 +80,7 @@ func GetDocByID(id string) (*Doc, error) {
 }
 
 func GetDocByCase(caseID string) (*Doc, error) {
-	conn, err := db.GetPool()
+	conn, err := GetPool()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -94,7 +102,7 @@ func GetDocByCase(caseID string) (*Doc, error) {
 }
 
 func CreateDoc(id, case_id, nature, natureCode, accord string, date time.Time) error {
-	conn, err := db.GetPool()
+	conn, err := GetPool()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
