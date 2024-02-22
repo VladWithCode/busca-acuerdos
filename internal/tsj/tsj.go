@@ -6,7 +6,7 @@ import (
 	"regexp"
 
 	"github.com/google/uuid"
-	db "github.com/vladwithcode/juzgados/internal/db/docs"
+	"github.com/vladwithcode/juzgados/internal/db"
 	"github.com/vladwithcode/juzgados/internal/reader"
 )
 
