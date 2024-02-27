@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        {{block "title" .}}
+        <title>{{if ne .ReportTitle ""}} {{.ReportTitle}} {{else}}Reporte de Expedientes{{end}}</title>
+        {{end}}
+		<link rel="stylesheet" href="/style.css" />
+	</head>
+	<body class="bg-stone-100 text-stone-950">
+		{{block "header" .}}
+        <header></header>
+		{{end}}
+
+        {{template "content" .}}
+
+        {{block "footer" .}}
+		<footer class="hidden">footer</footer>
+		{{end}}
+	</body>
+</html>
