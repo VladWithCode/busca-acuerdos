@@ -1,131 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscar Acuerdos...</title>
-    <script src="/tailwindcss.min.js"></script>
-    <script src="/htmx.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="/main.js"></script>
-    <link rel="stylesheet" href="/style.css">
-</head>
-<body class="bg-stone-100 text-stone-900">
-    <div class="container h-full flex flex-col items-center md:px-8 mx-auto overflow-x-hidden">
-        <div class="my-auto space-y-6">
-            <h1 class="text-3xl md:text-5xl text-center">Busca Acuerdos</h1>
-            <form
-                hx-get="/api/cases"
-                hx-target="#result"
-                hx-swap="beforeend"
-                x-data="{
-                    cases: [{},{},{},{},{}],
-                    id: '',
-                    type: '',
-                    get emptyCases() {
-                        return this.cases.filter(c => c.id != undefined)
-                    }
-                }"
-                data-form="search">
-                <div class="flex w-fit mx-auto text-stone-600 text-sm">
-                    <select name="type" id="type" class="w-24 flex-initial bg-stone-300 border border-zinc-400 rounded-l-full pl-2 py-[8px] text-wrap whitespace-break-spaces focus:outline-0 focus:border-stone-600" x-ref="typeSel" x-model="type">
-                        <option value="">Juzgado</option>
-                        <option value="aux1">Auxiliar 1</option>
-                        <option value="aux2">Auxiliar 2</option>
-                        <option value="civ2">Civil 2</option>
-                        <option value="civ3">Civil 3</option>
-                        <option value="civ4">Civil 4</option>
-                        <option value="fam1">Familiar 1</option>
-                        <option value="fam2">Familiar 2</option>
-                        <option value="fam3">Familiar 3</option>
-                        <option value="fam4">Familiar 4</option>
-                        <option value="fam5">Familiar 5</option>
-                        <option value="mer1">Mercantil 1</option>
-                        <option value="mer2">Mercantil 2</option>
-                        <option value="mer3">Mercantil 3</option>
-                        <option value="mer4">Mercantil 4</option>
-                        <option value="merOral">Mercantil Oral</option>
-                        <option value="seccc">Secretaria Colegiada</option>
-                        <option value="seccu">Secretaria Unitaria</option>
-                        <option value="cjmf1">CJM Familiar 1</option>
-                        <option value="cjmf2">CJM Familiar 2</option>
-                        <option value="trib1">Laboral</option>
-                    </select>
-                    <input type="text" name="id" id="id" class="w-32 py-[7px] px-4 border-y border-stone-400 focus:outline-0 focus:border-stone-600" placeholder="469/2022" x-ref="idInp" x-model="id">
-                    <button
-                        type="button"
-                        class="w-24 bg-stone-300 font-medium rounded-r-full border border-stone-400 px-2 py-[7px] focus:outline-0 focus:border-stone-600"
-                        @click="if (emptyCases.length === 5) {
-                            alert('Solo se pueden buscar 5 expedientes a la vez')
-                            return
-                        };
-                        if (id === '' || type === '') {
-                            alert('¡Ambos campos son requeridos!')
-                            return
-                        }
-                        let added = false
-                        cases = cases.map(c => {
-                            if (!added && c.id === undefined) {
-                                added = true
-                                return {
-                                    id: id,
-                                    type: type,
-                                    delFlag: id + '+' + type,
-                                }
-                            }
-
-                            return c;
-                        })
-
-                        id = ''
-                        type = ''
-                    ">Agregar</button>
-                </div>
-                <div class="flex flex-col items-center gap-2 mt-4">
-                    <template x-for="c in cases">
-                        <template x-if="c.id !== undefined">
-                            <div class="flex w-4/5 mx-auto gap-2 items-center justify-center">
-                                <input type="hidden" name="cases" id="cases" :value="c.id + '+' + c.type">
-                                <div class="" x-text="c.type"></div>
-                                <div class="font-medium" x-text="c.id"></div>
-                                <button type="button">
-                                    <svg class="w-5 h-5 fill-red-700" @click="cases = cases.map(checkCase => {
-                                        if (checkCase.delFlag !== c.delFlag) return checkCase;
-
-                                        return {}
-                                    })">
-                                        <use href="/svg/close-circle.svg#delete"></use>
-                                    </svg>
-                                </button>
-                            </div>
-                        </template>
-                    </template>
-                    <template x-for="c in cases">
-                        <template x-if="c.id === undefined">
-                            <svg class="w-6 h-6 fill-stone-300 opacity-75" data-case-placeholder>
-                                <use href="/svg/add-circle.svg#add"></use>
-                            </svg>
-                        </template>
-                    </template>
-                    <button type="submit" class="w-3/5 bg-stone-300 font-medium rounded-full border border-stone-400 px-2 py-2 mt-2 mx-auto focus:outline-0 focus:border-stone-600">Buscar</button>
-                </div>
-
-<!--                 <div class="flex items-center gap-0"> -->
-<!--                     <div class="space-y-2"> -->
-<!--                         <label for="type" class="block font-medium">Juzgado</label> -->
-<!--                     </div> -->
-<!--                     <div class="px-4 md:max-w-[80%] mx-auto space-y-2"> -->
-<!--                         <label for="id" class="px-2 block font-medium">Expediente</label> -->
-<!--                     </div> -->
-<!--                 </div> -->
-            </form>
-            <div class="grid grid-cols-12 px-2 text-xs pb-6 md:text-base" id="result">
-               <div class="bg-stone-50 col-span-3 border border-zinc-400 p-2 rounded-tl-md md:col-span-2">Fecha</div>
-               <div class="bg-stone-50 col-span-3 border border-zinc-400 p-2 border-l-0 md:col-span-2">Expediente</div>
-               <div class="bg-stone-50 col-span-3 border border-zinc-400 p-2 border-l-0 md:col-span-4">Naturaleza</div>
-               <div class="bg-stone-50 col-span-3 border border-zinc-400 p-2 border-l-0 rounded-tr-md md:col-span-4">Acuerdo</div>
-            </div>
-        </div>
-    </div>
-</body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Buscar Acuerdos...</title>
+		{{block "scripts" .}}
+		<script src="/htmx.min.js"></script>
+		<script
+			defer
+			src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+		<script src="/main.js"></script>
+		<link rel="stylesheet" href="/style.css" />
+		{{end}}
+	</head>
+	<body class="bg-stone-100 text-stone-950">
+		{{block "header" .}}
+		<div class="bg-primary-900 p-4 text-stone-50">
+			<div class="container flex justify-between mx-auto">
+				<h2 class="text-xl font-medium">Busca Acuerdos</h2>
+				<nav class="hidden space-x-4">
+					<a class="font-medium text-lg" href="/">Inicio</a>
+					<a class="font-medium text-lg" href="/">Buscador</a>
+					<a class="font-medium text-lg" href="/">Servicios</a>
+					<a class="font-medium text-lg" href="/">Precios</a>
+					<a class="font-medium text-lg" href="/">Contacto</a>
+				</nav>
+			</div>
+		</div>
+		{{end}} {{template "content" .}} {{block "footer" .}}
+		<footer class="hidden">footer</footer>
+		{{end}}
+	</body>
 </html>
