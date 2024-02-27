@@ -7,25 +7,29 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	db "github.com/vladwithcode/juzgados/internal/db/docs"
+	"github.com/vladwithcode/juzgados/internal/auth"
+	"github.com/vladwithcode/juzgados/internal/db"
 	"github.com/vladwithcode/juzgados/internal/reader"
 	"github.com/vladwithcode/juzgados/internal/tsj"
 )
 
+var Router *httprouter.Router
+
 func NewRouter() http.Handler {
 	router := httprouter.New()
 
-	router.GET("/test", testFn)
-
+	// Static Routes
 	router.GET("/", indexHandler)
+	router.GET("/report", reportHandler)
+	router.GET("/dashboard", auth.WithAuthMiddleware(dashboardHandler))
+
+	// API Routes
 	router.GET("/api/docs", getDocs)
 	router.POST("/api/docs", createDoc)
 	router.GET("/api/file", getFile)
@@ -34,35 +38,21 @@ func NewRouter() http.Handler {
 	router.GET("/api/docs-by-case/:caseID", getDocByCase)
 	router.GET("/api/docs/:ID", getDocByID)
 
+	// User Routes
+	router.GET("/iniciar-sesion", SignInHandler)
+	router.POST("/sign-in", SignInUser)
+	router.POST("/api/users", CreateUser)
+
+	// Alert Routes
+	router.POST("/api/alerts/test", SendTestMessage)
+
 	router.NotFound = http.FileServer(http.Dir("web/static"))
 
 	return router
 }
 
-func testFn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	exp, err := regexp.Compile(`(?m)^(\d[^\n]*00045/2011[^\n][^\d]*)$`)
-
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(w, 500, "Error")
-		return
-	}
-
-	fmt.Printf("exp: %v\n", exp)
-
-	testStr, _ := os.ReadFile("test.txt")
-
-	matches := exp.Find(testStr)
-
-	fmt.Printf("matches: %s\n", matches)
-
-	respondWithJSON(w, 200, struct {
-		Status string `json:"status"`
-	}{Status: "OK"})
-}
-
 func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	templ, err := template.ParseFiles("web/templates/layout.html")
+	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/index.html")
 
 	if err != nil {
 		fmt.Println(err)
@@ -70,6 +60,40 @@ func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	templ.Execute(w, nil)
+}
+
+func reportHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	templ, err := template.ParseFiles("web/templates/reports/layout.html", "web/templates/alert-report.html")
+
+	if err != nil {
+		fmt.Println(err)
+		respondWithError(w, 500, "Server Error")
+	}
+
+	templ.Execute(w, struct {
+		ReportTitle string
+	}{
+		ReportTitle: "",
+	})
+}
+
+func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
+	user, err := db.GetUserByUsername(auth.Username)
+
+	if err != nil {
+		respondWithError(w, 500, "Ocurrio un error con el servidor")
+		return
+	}
+
+	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/dashboard.html")
+
+	data := make(map[string]interface{})
+	data["User"] = user
+
+	templ.Execute(
+		w,
+		data,
+	)
 }
 
 func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -227,7 +251,23 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	rowTempl, err := template.New("table-row.html").Funcs(template.FuncMap{
 		"FormatDate": func(date time.Time) string {
-			return fmt.Sprintf("%d-%d-%d", date.Day(), date.Month(), date.Year())
+			var (
+				d    int    = date.Day()
+				m    int    = int(date.Month())
+				y    int    = date.Year()
+				mStr string = fmt.Sprint(m)
+				dStr string = fmt.Sprint(d)
+			)
+
+			if m < 10 {
+				mStr = fmt.Sprintf("0%d", m)
+			}
+
+			if d < 10 {
+				dStr = fmt.Sprintf("0%d", d)
+			}
+
+			return fmt.Sprintf("%v-%v-%v", dStr, mStr, y)
 		},
 		"Trim": func(str string) string {
 			return strings.TrimSpace(str)
