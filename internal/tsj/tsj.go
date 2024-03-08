@@ -1,9 +1,10 @@
 package tsj
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
+	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/vladwithcode/juzgados/internal/db"
@@ -16,6 +17,54 @@ var (
 	NATURE_LEN = 23
 	ACCORD_LEN = 49
 )
+
+type NotFoundError struct {
+	Message string
+}
+
+func (e NotFoundError) Error() string {
+	return fmt.Sprintf("[NotFound error] %s\n", e.Message)
+}
+
+func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (*db.Doc, error) {
+	if searchDate == nil {
+		t := time.Now()
+		searchDate = &t
+	}
+
+	var data []byte
+	var err error
+
+	for i := 0; i <= daysBack; i++ {
+		y, m, d := searchDate.Date()
+		date := fmt.Sprintf("%d%d%d", d, m, y)
+		data, err = FetchAndReadDoc(caseId, date, caseType)
+
+		fmt.Printf("Searching for %v-%v on date %v\n", caseId, caseType, date)
+
+		if data != nil {
+			break
+		}
+
+		t := searchDate.AddDate(0, 0, -1)
+		searchDate = &t
+
+		if i < daysBack {
+			err = nil
+		}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	doc := DataToDoc(data)
+
+	doc.AccordDate = *searchDate
+	doc.NatureCode = caseType
+
+	return doc, nil
+}
 
 func FetchAndReadDoc(caseId, searchDate, caseType string) ([]byte, error) {
 	pdfContent, err := reader.Reader(searchDate, caseType)
@@ -37,7 +86,11 @@ func FetchAndReadDoc(caseId, searchDate, caseType string) ([]byte, error) {
 	idx := searchExp.FindIndex(*pdfContent)
 
 	if len(idx) == 0 {
-		return nil, errors.New("No se encontró información sobre el caso solicitado")
+		err := NotFoundError{
+			Message: "No se encontró información sobre el caso solicitado",
+		}
+
+		return nil, err
 	}
 
 	start, end := idx[0], idx[1]
@@ -47,14 +100,13 @@ func FetchAndReadDoc(caseId, searchDate, caseType string) ([]byte, error) {
 		Content string `json:"content"`
 	}
 
-	contentAsStr := (*pdfContent)[start:end]
+	contentAsBytes := (*pdfContent)[start:end]
 
-	return contentAsStr, nil
+	return contentAsBytes, nil
 }
 
 func DataToDoc(data []byte) *db.Doc {
 	lineExp := regexp.MustCompile("(?m)\n")
-	// trimExp := regexp.MustCompile("(?m)^ *| *$")
 	rows := lineExp.Split(string(data), -1)
 
 	doc := db.Doc{}
@@ -87,7 +139,7 @@ func DataToDoc(data []byte) *db.Doc {
 				prevChar = 0
 			}
 
-			tempCols[currentCol] = append(tempCols[currentCol], byte(char))
+			tempCols[currentCol] = utf8.AppendRune(tempCols[currentCol], char)
 
 			// Keep track of the length of the columns for splitting following rows
 			if i == 0 && currentCol < 3 {
@@ -116,22 +168,6 @@ func DataToDoc(data []byte) *db.Doc {
 				prevChar = 0
 			}
 
-			// fmt.Println("Col 0", string(tempCols[0]))
-			// fmt.Println("Col 1", string(tempCols[1]))
-			// fmt.Println("Col 2", string(tempCols[2]))
-			// fmt.Println("Col 3", string(tempCols[3]))
-			// fmt.Printf(
-			// 	"Row %d; Col %d; ColLen: %d; Char: %s; MaxLen: %d; prevChar: %s; seenTwoSpace: %t; charCounts: %+v\n\n",
-			// 	i,
-			// 	currentCol,
-			// 	len(tempCols[currentCol]),
-			// 	string(char),
-			// 	getColMaxLength(currentCol),
-			// 	string(prevChar),
-			// 	seenTwoSpace,
-			// 	charCounts,
-			// )
-
 			prevChar = byte(char)
 		}
 
@@ -139,11 +175,6 @@ func DataToDoc(data []byte) *db.Doc {
 		cols[1] = append(cols[1], tempCols[1]...)
 		cols[2] = append(cols[2], tempCols[2]...)
 		cols[3] = append(cols[3], tempCols[3]...)
-
-		// cols[0] = append(cols[0], '\n')
-		// cols[1] = append(cols[1], '\n')
-		// cols[2] = append(cols[2], '\n')
-		// cols[3] = append(cols[3], '\n')
 	}
 
 	doc.Case = string(cols[1])
@@ -187,32 +218,4 @@ func handleColsWithOneSpace(data []byte, doc *db.Doc) *db.Doc {
 	doc.FullText = string(data)
 
 	return doc
-}
-
-func HandleSimpleCases() {
-
-	// doc.Case = trimExp.ReplaceAllString(string(cols[1]), "")
-	// doc.Nature = trimExp.ReplaceAllString(string(cols[2]), "")
-	// doc.Accord = trimExp.ReplaceAllString(string(cols[3]), "")
-	/*cols := spaceExp.Split(str, -1)
-
-	if i == 0 && len(cols) < 4 {
-		return handleColsWithOneSpace(data, &doc)
-	}
-
-	if i == 0 {
-		doc.Case = cols[1]
-		doc.Nature = cols[2]
-		doc.Accord = cols[3]
-		continue
-	}
-
-	if len(cols) > 2 {
-		doc.Nature = doc.Nature + "\n" + cols[1]
-		doc.Nature = doc.Nature + "\n" + cols[2]
-		continue
-	}
-
-	doc.Accord = doc.Accord + "\n" + cols[1]
-	*/
 }
