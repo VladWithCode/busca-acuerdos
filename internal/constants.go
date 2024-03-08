@@ -1,4 +1,4 @@
-package juzgados
+package internal
 
 var JuzgadosMap = map[string]string{
 	"AUXILIAR_1":           "aux1",
@@ -21,4 +21,27 @@ var JuzgadosMap = map[string]string{
 	"CJM_FAMILIAR_1":       "cjmf1",
 	"CJM_FAMILIAR_2":       "cjmf2",
 	"LABORAL":              "trib1",
+}
+
+var CodesMap = map[string]string{
+	"aux1":    "Primero Auxiliar",
+	"aux2":    "Segundo Auxiliar",
+	"civ2":    "Segundo Civil",
+	"civ3":    "Tercero Civil",
+	"civ4":    "Cuarto Civil",
+	"fam1":    "Primero Familiar",
+	"fam2":    "Segundo Familiar",
+	"fam3":    "Tercero Familiar",
+	"fam4":    "Cuarto Familiar",
+	"fam5":    "Quinto Familiar",
+	"mer1":    "Primero Mercantil",
+	"mer2":    "Segundo Mercantil",
+	"mer3":    "Tercero Mercantil",
+	"mer4":    "Cuarto Mercantil",
+	"merOral": "Oral Mercantil",
+	"seccc":   "Sala Civil Colegiada",
+	"seccu":   "Sala Civil Unitaria",
+	"cjmf1":   "Primero Especializado Familiar",
+	"cjmf2":   "Segundo Especializado Familiar",
+	"trib1":   "Tribunal Laboral",
 }
