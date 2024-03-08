@@ -106,6 +106,7 @@ func GetUserById(id string) (*User, error) {
 
 func GetUserByUsername(username string) (*User, error) {
 	conn, err := GetPool()
+	defer conn.Release()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
