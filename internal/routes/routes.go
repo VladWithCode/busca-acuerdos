@@ -26,7 +26,6 @@ func NewRouter() http.Handler {
 
 	// Static Routes
 	router.GET("/", indexHandler)
-	router.GET("/report", reportHandler)
 	router.GET("/dashboard", auth.WithAuthMiddleware(dashboardHandler))
 
 	// API Routes
@@ -43,8 +42,14 @@ func NewRouter() http.Handler {
 	router.POST("/sign-in", SignInUser)
 	router.POST("/api/users", CreateUser)
 
+	// Report Routes
+	router.GET("/report", ReportHandler)
+
 	// Alert Routes
+	router.POST("/api/alerts", auth.WithAuthMiddleware(CreateAlert))
 	router.POST("/api/alerts/test", SendTestMessage)
+
+	router.GET("/api/cases/accord", auth.WithAuthMiddleware(SearchAccord))
 
 	router.NotFound = http.FileServer(http.Dir("web/static"))
 
@@ -60,40 +65,6 @@ func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	templ.Execute(w, nil)
-}
-
-func reportHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	templ, err := template.ParseFiles("web/templates/reports/layout.html", "web/templates/alert-report.html")
-
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(w, 500, "Server Error")
-	}
-
-	templ.Execute(w, struct {
-		ReportTitle string
-	}{
-		ReportTitle: "",
-	})
-}
-
-func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
-	user, err := db.GetUserByUsername(auth.Username)
-
-	if err != nil {
-		respondWithError(w, 500, "Ocurrio un error con el servidor")
-		return
-	}
-
-	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/dashboard.html")
-
-	data := make(map[string]interface{})
-	data["User"] = user
-
-	templ.Execute(
-		w,
-		data,
-	)
 }
 
 func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
