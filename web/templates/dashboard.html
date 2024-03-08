@@ -1,6 +1,112 @@
-{{define "content" .}}
+{{define "accord"}}
+<div
+    class="row-start-{{len (printf "%*s%*s" .I "" 2 "")}} col-start-5 col-span-2 text-accent-700 {{if .EvenRow}}bg-accent-500 bg-opacity-30{{end}} py-1 px-2 text-xs text-center flex items-center"
+    @click="$el.nextElementSibling.classList.remove('hidden')"
+    >
+        <button class="p-1 px-2 rounded bg-accent-700 text-stone-50">Leer</button>
+    </div>
 
-<h1 class="text-3xl">Dashboard</h1>
-<p class="text-lg text-zinc-500">Hola, {{.Name}}</p>
+<div
+    class="bg-stone-50 w-4/5 border border-zinc-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded hidden"
+    @mousedown.outside="$el.classList.add('hidden')"
+    x-transition>
+    <div class="flex justify-between items-center bg-stone-100 py-2 px-4 leading-normal border-b border-zinc-400">
+        <p class="text-lg font-medium">Acuerdo</p>
+        <button class="font-bold text-xl" @click="$el.parentElement.parentElement.classList.add('hidden')">&times;</button>
+    </div>
+    <p class="text-center text-sm font-medium py-2">{{.Alert.CaseId}} {{GetNature .Alert.NatureCode}}</p>
+    <div class="text-base px-4 pb-2">{{.Alert.LastAccord.String}}</div>
+</div>
+{{end}}
+{{define "content"}}
+<main class="p-4" x-data="{ addModalActive: false }">
+    <h1 class="text-primary-700 text-2xl font-semibold mb-1">Listado</h1>
+    <div class="flex gap-2 items-center py-2">
+        <button class="bg-accent-500 text-stone-50 rounded text-sm p-2" @click="addModalActive = !addModalActive">Agregar</button>
+        <button class="bg-accent-500 text-stone-50 rounded text-sm p-2">Generar Reporte</button>
+        <button class="bg-accent-500 text-stone-50 rounded text-sm p-2 ml-auto">Buscar</button>
+    </div>
+    <div class="py-1"></div>
+    <div class="grid grid-cols-6 text-primary-900 overflow-y-auto -mx-3" id="accord-table">
+        <div class="hidden row-start-1 text-accent-700 border-b-2 border-accent-700 col-start-1 py-1 px-2">Alias</div>
+        <div class="row-start-1 col-start-1 col-span-2 text-accent-700 border-b-2 border-accent-700 py-1 px-2">Expendiente</div>
+        <div class="row-start-1 col-start-3 col-span-2 text-accent-700 border-b-2 border-accent-700 py-1 px-2">Juzgado</div>
+        <div class="row-start-1 col-start-5 col-span-2 text-accent-700 border-b-2 border-accent-700 py-1 px-2">Acuerdo</div>
+
+        {{range $i, $alert := .Alerts}}
+        {{$evenRow := (IsEven $i)}}
+
+        <div class="hidden row-start-1 text-accent-700 {{if $evenRow}}bg-primary-500{{end}} col-start-1 py-1 px-2">
+        {{if and .Alias.Valid (ne .Alias.String "")}}
+        {{.Alias.String}}
+        {{else}}
+        N/A
+        {{end}}
+        </div>
+
+        <div class="row-start-{{len (printf "%*s%*s" $i "" 2 "")}} col-start-1 col-span-2 text-accent-700 {{if $evenRow}}bg-accent-500 bg-opacity-30{{end}} py-1 px-2 text-sm">{{.CaseId}}</div>
+        <div class="row-start-{{len (printf "%*s%*s" $i "" 2 "")}} col-start-3 col-span-2 text-accent-700 {{if $evenRow}}bg-accent-500 bg-opacity-30{{end}} py-1 px-2 text-sm">{{GetNature .NatureCode}}</div>
+
+        {{if and .LastAccord.Valid (ne .LastAccord.String "")}}
+        {{ $data := dict "Alert" $alert "I" $i "EvenRow" $evenRow }}
+        {{template "accord" $data}}
+        {{else}}
+        <form hx-get="/api/cases/accord" hx-target="this" hx-swap="outerHTML" class="row-start-{{len (printf "%*s%*s" $i "" 2 "")}} col-start-5 col-span-2 text-accent-700 {{if $evenRow}}bg-accent-500 bg-opacity-30{{end}} py-1 px-2 text-xs text-center flex items-center">
+            <input type="hidden" name="idx" id="idx" value="{{$i}}" readonly>
+            <input type="hidden" name="searchParams" id="searchParams" value="{{.CaseId}}-{{.NatureCode}}" readonly>
+            <button type="submit" class="p-1 px-2 rounded bg-accent-700 text-stone-50">Buscar...</button>
+        </form>
+        {{end}}
+
+        {{end}}
+    </div>
+    
+    <div class="absolute w-96 max-w-[95%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40" x-show="addModalActive">
+        <div class="absolute w-screen h-screen top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary-900 bg-opacity-40"></div>
+        <form hx-post="/api/alerts" hx-target="#accord-table" hx-swap="beforeend" class="relative z-10 bg-stone-100 shadow-sm shadow-accent-500 rounded p-2 space-y-2" @mousedown.outside="addModalActive = false">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg text-primary-700 font-semibold">Agregar alerta</h2>
+                <button type="button" @click="addModalActive = false">
+                    <svg class="w-5 h-5 fill-primary-700">
+                        <use href="/svg/close-circle.svg#delete"></use>
+                    </svg>
+                </button>
+            </div>
+            <div class="flex gap-2">
+                <div class="space-y-1 w-1/2">
+                    <label for="caseId" class="block text-primary-700 font-semibold text-xs">Expediente</label>
+                    <input class="w-full rounded shadow-inner shadow-stone-300 p-2 focus:outline-primary-800" type="text" id="caseId" name="caseId" placeholder="84/2003">
+                </div>
+                <div class="space-y-1 w-1/2">
+                    <label for="natureCode" class="block text-primary-700 font-semibold text-xs">Juzgado</label>
+                    <select name="natureCode" id="natureCode" class="w-full rounded p-2 text-wrap whitespace-break-spaces focus:outline-primary-800" x-ref="typeSel">
+                        <option value="aux1">Auxiliar 1</option>
+                        <option value="aux2">Auxiliar 2</option>
+                        <option value="civ2">Civil 2</option>
+                        <option value="civ3">Civil 3</option>
+                        <option value="civ4">Civil 4</option>
+                        <option value="fam1">Familiar 1</option>
+                        <option value="fam2">Familiar 2</option>
+                        <option value="fam3">Familiar 3</option>
+                        <option value="fam4">Familiar 4</option>
+                        <option value="fam5">Familiar 5</option>
+                        <option value="mer1">Mercantil 1</option>
+                        <option value="mer2">Mercantil 2</option>
+                        <option value="mer3">Mercantil 3</option>
+                        <option value="mer4">Mercantil 4</option>
+                        <option value="merOral">Mercantil Oral</option>
+                        <option value="seccc">Secretaria Colegiada</option>
+                        <option value="seccu">Secretaria Unitaria</option>
+                        <option value="cjmf1">CJM Familiar 1</option>
+                        <option value="cjmf2">CJM Familiar 2</option>
+                        <option value="trib1">Laboral</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="w-full rounded p-2 text-stone-50 bg-accent-600">Agregar</button>
+        </form>
+    </div>
+</main>
+
 
 {{end}}

@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,9 +10,75 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/vladwithcode/juzgados/internal"
 	"github.com/vladwithcode/juzgados/internal/auth"
 	"github.com/vladwithcode/juzgados/internal/db"
 )
+
+func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
+	user, err := db.GetUserByUsername(auth.Username)
+
+	if err != nil {
+		respondWithError(w, 500, "Ocurrio un error con el servidor")
+		return
+	}
+
+	alerts, err := db.FindAlertsByUser(auth.Id)
+
+	if err != nil {
+		fmt.Printf("[Alert Find Err]: %v\n", err)
+	}
+
+	templ, err := template.New("layout.html").Funcs(template.FuncMap{
+		"IsEven": func(n int) bool {
+			return n%2 == 0
+		},
+		"GetNature": func(nc string) string {
+			return internal.CodesMap[nc]
+		},
+		// Refer to https://stackoverflow.com/questions/18276173/calling-a-template-with-several-pipeline-parameters
+		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			if len(values)%2 != 0 {
+				return nil, errors.New("invalid dict call")
+			}
+			dict := make(map[string]interface{}, len(values)/2)
+			for i := 0; i < len(values); i += 2 {
+				key, ok := values[i].(string)
+				if !ok {
+					return nil, errors.New("dict keys must be strings")
+				}
+				dict[key] = values[i+1]
+			}
+			return dict, nil
+		},
+	}).ParseFiles("web/templates/layout.html", "web/templates/dashboard.html")
+
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		respondWithError(w, 500, "Ocurrio un error inseperado")
+		return
+	}
+
+	data := struct {
+		User   *db.User
+		Alerts *[]db.Alert
+	}{
+		User:   user,
+		Alerts: alerts,
+	}
+
+	err = templ.Execute(
+		w,
+		data,
+	)
+
+	if err != nil {
+		fmt.Printf("[Execute Error]: %v\n", err)
+
+		respondWithError(w, 500, "Ocurrio un error inesperado")
+		return
+	}
+}
 
 func SignInHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/sign-in.html")
