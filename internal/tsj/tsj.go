@@ -40,8 +40,6 @@ func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (
 		date := fmt.Sprintf("%d%d%d", d, m, y)
 		data, err = FetchAndReadDoc(caseId, date, caseType)
 
-		fmt.Printf("Searching for %v-%v on date %v\n", caseId, caseType, date)
-
 		if data != nil {
 			break
 		}
