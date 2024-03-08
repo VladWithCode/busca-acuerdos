@@ -24,7 +24,7 @@ type AuthClaims struct {
 	Username           string
 	SubscriptionActive bool
 
-	jwt.RegisteredClaims
+	jwt.MapClaims
 }
 
 func CreateToken(user *db.User) (string, error) {
@@ -37,7 +37,7 @@ func CreateToken(user *db.User) (string, error) {
 		user.Id,
 		user.Username,
 		user.SubscriptionActive,
-		jwt.RegisteredClaims{},
+		jwt.MapClaims{},
 	})
 
 	return t.SignedString([]byte(k))
@@ -69,7 +69,7 @@ func WithAuthMiddleware(next AuthedHandler) httprouter.Handle {
 		cookieToken, err := r.Cookie("auth_token")
 
 		if err != nil {
-			RejectUnauthenticated(w, r, nil, "Error al leer cookies")
+			RejectUnauthenticated(w, r, nil, "No se encontro token")
 			return
 		}
 
@@ -83,16 +83,26 @@ func WithAuthMiddleware(next AuthedHandler) httprouter.Handle {
 		t, err := ParseToken(tokenStr[1])
 
 		if err != nil {
-			fmt.Printf("err: %v\n", err)
 			RejectUnauthenticated(w, r, nil, "Sesion Token invalido")
 			return
 		}
 
-		if claims, ok := t.Claims.(AuthClaims); ok && t.Valid {
+		if claims, ok := t.Claims.(jwt.MapClaims); ok && t.Valid {
+			var (
+				id, ok1                 = claims["Id"].(string)
+				username, ok2           = claims["Username"].(string)
+				subscriptionActive, ok3 = claims["SubscriptionActive"].(bool)
+			)
+
+			if !ok1 || !ok2 || !ok3 {
+				RejectUnauthenticated(w, r, nil, "Sesion Token invalido")
+				return
+			}
+
 			next(w, r, ps, &Auth{
-				Id:                 claims.Id,
-				Username:           claims.Username,
-				SubscriptionActive: claims.SubscriptionActive,
+				Id:                 id,
+				Username:           username,
+				SubscriptionActive: subscriptionActive,
 			})
 		} else {
 			RejectUnauthenticated(w, r, nil, "Sesion Token invalido")
