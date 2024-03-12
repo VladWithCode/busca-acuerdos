@@ -46,6 +46,7 @@ func NewRouter() http.Handler {
 	router.GET("/report", auth.WithAuthMiddleware(ReportHandler))
 
 	// Alert Routes
+	router.GET("/api/alerts/all", TestAllAlerts)
 	router.POST("/api/alerts", auth.WithAuthMiddleware(CreateAlert))
 	router.POST("/api/alerts/test", SendTestMessage)
 	router.GET("/api/alerts/report/:userId", GetReportForUser)

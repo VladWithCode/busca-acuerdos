@@ -36,3 +36,15 @@ func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, au
 
 	respondWithJSON(w, 201, alert)
 }
+
+func TestAllAlerts(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	alerts, err := db.FindAllAutoReportAlerts()
+
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		respondWithError(w, 500, "Ocurrio un error en el servidor")
+		return
+	}
+
+	respondWithJSON(w, 200, map[string]any{"alerts": *alerts})
+}

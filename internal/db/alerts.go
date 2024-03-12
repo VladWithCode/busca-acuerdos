@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Alert struct {
@@ -29,6 +30,8 @@ type Alert struct {
 	...
 	*/
 }
+
+type AutoReportAlerts map[string][]Alert
 
 func FindAlertById(id string) (*Alert, error) {
 	conn, err := GetPool()
@@ -123,6 +126,40 @@ func FindAutoReportAlertsForUser(userId string) (*[]Alert, error) {
 	}
 
 	return &alerts, nil
+}
+
+func FindAllAutoReportAlerts() (*AutoReportAlerts, error) {
+	conn, err := GetPool()
+	defer conn.Release()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	if err != nil {
+		return nil, err
+	}
+
+	alertMap := AutoReportAlerts{}
+
+	rows, err := conn.Query(ctx, "SELECT user_id, ARRAY_AGG((id, user_id, case_id, nature_code, active, last_accord)) AS rows FROM (SELECT * FROM alerts WHERE active = true) AS subq GROUP BY user_id")
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var userId string
+		var tempArr pgtype.Array[Alert]
+
+		err = rows.Scan(&userId, &tempArr)
+
+		if err != nil {
+			return nil, err
+		}
+
+		alertMap[userId] = tempArr.Elements
+	}
+
+	return &alertMap, nil
 }
 
 func CreateAlert(userId string, caseId string, natureCode string) (*Alert, error) {
