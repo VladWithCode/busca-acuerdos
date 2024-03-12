@@ -3,7 +3,6 @@ package alerts
 import (
 	"context"
 	"fmt"
-	"html/template"
 	"os/exec"
 	"path"
 	"time"
@@ -52,35 +51,4 @@ func GenReportPdf(userId string) (string, error) {
 	}
 
 	return fmt.Sprintf("/reports/%v/report.pdf", userId), nil
-}
-
-func CreateDocument(reportData *ReportData) (*template.Template, error) {
-	templ, err := template.New("alert-report.html").Funcs(template.FuncMap{
-
-		"FormatDate": func(date time.Time) string {
-			var (
-				d    int    = date.Day()
-				m    int    = int(date.Month())
-				y    int    = date.Year()
-				mStr string = fmt.Sprint(m)
-				dStr string = fmt.Sprint(d)
-			)
-
-			if m < 10 {
-				mStr = fmt.Sprintf("0%d", m)
-			}
-
-			if d < 10 {
-				dStr = fmt.Sprintf("0%d", d)
-			}
-
-			return fmt.Sprintf("%v-%v-%v", dStr, mStr, y)
-		},
-	}).ParseFiles("web/templates/alert-report.html")
-
-	if err != nil {
-		return nil, err
-	}
-
-	return templ, err
 }
