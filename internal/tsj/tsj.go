@@ -3,6 +3,8 @@ package tsj
 import (
 	"fmt"
 	"regexp"
+	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -11,12 +13,14 @@ import (
 	"github.com/vladwithcode/juzgados/internal/reader"
 )
 
-var (
+const (
 	IDX_LEN    = 7
 	CASE_LEN   = 15
 	NATURE_LEN = 23
 	ACCORD_LEN = 49
 )
+
+const DEFAULT_DAYS_BACK = 31
 
 type NotFoundError struct {
 	Message string
@@ -26,17 +30,38 @@ func (e NotFoundError) Error() string {
 	return fmt.Sprintf("[NotFound error] %s\n", e.Message)
 }
 
+type GetCasesResult struct {
+	Docs         []*db.Doc
+	NotFoundKeys []string
+	mux          sync.Mutex
+}
+
+func (r *GetCasesResult) AppendCase(caseDoc *db.Doc) {
+	r.mux.Lock()
+	defer r.mux.Unlock()
+	r.Docs = append(r.Docs, caseDoc)
+}
+
+func (r *GetCasesResult) AppendNotFound(key string) {
+	r.mux.Lock()
+	defer r.mux.Unlock()
+	r.NotFoundKeys = append(r.NotFoundKeys, key)
+}
+
 func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (*db.Doc, error) {
+	var localDate time.Time
+
 	if searchDate == nil {
-		t := time.Now()
-		searchDate = &t
+		localDate = time.Now()
+	} else {
+		localDate = *searchDate
 	}
 
 	var data []byte
 	var err error
 
 	for i := 0; i <= daysBack; i++ {
-		y, m, d := searchDate.Date()
+		y, m, d := localDate.Date()
 		date := fmt.Sprintf("%d%d%d", d, m, y)
 		data, err = FetchAndReadDoc(caseId, date, caseType)
 
@@ -44,9 +69,9 @@ func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (
 			break
 		}
 
-		t := searchDate.AddDate(0, 0, -1)
-		searchDate = &t
+		localDate = localDate.AddDate(0, 0, -1)
 
+		// For every iteration except the last, reset err
 		if i < daysBack {
 			err = nil
 		}
@@ -58,26 +83,54 @@ func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (
 
 	doc := DataToDoc(data)
 
-	doc.AccordDate = *searchDate
+	doc.AccordDate = localDate
 	doc.NatureCode = caseType
 
 	return doc, nil
+}
+
+func GetCasesData(caseKeys []string, daysBack uint) (*GetCasesResult, error) {
+	result := GetCasesResult{
+		Docs:         []*db.Doc{},
+		NotFoundKeys: []string{},
+		mux:          sync.Mutex{},
+	}
+	wg := sync.WaitGroup{}
+
+	for _, cK := range caseKeys {
+		caseKey := cK
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			params := strings.Split(caseKey, "-")
+			caseId, caseType := params[0], params[1]
+
+			doc, err := GetCaseData(caseId, caseType, nil, int(daysBack))
+
+			if err != nil {
+				result.AppendNotFound(caseKey)
+				return
+			}
+
+			result.AppendCase(doc)
+		}()
+	}
+
+	wg.Wait()
+
+	return &result, nil
 }
 
 func FetchAndReadDoc(caseId, searchDate, caseType string) ([]byte, error) {
 	pdfContent, err := reader.Reader(searchDate, caseType)
 
 	if err != nil {
-		fmt.Println(err)
-
 		return nil, err
 	}
 
 	searchExp, err := reader.GenRegExp(caseId)
 
 	if err != nil {
-		fmt.Println(err)
-
 		return nil, err
 	}
 
@@ -117,7 +170,7 @@ func DataToDoc(data []byte) *db.Doc {
 	var prevChar byte
 	charCounts := []int{0, 0, 0, ACCORD_LEN}
 
-	for i, str := range rows {
+	for rowidx, str := range rows {
 		currentCol = 0
 		seenTwoSpace = false
 		prevChar = 0
@@ -126,8 +179,9 @@ func DataToDoc(data []byte) *db.Doc {
 		tempCols[2] = []byte{}
 		tempCols[3] = []byte{}
 
-		for j, char := range str {
+		for charIdx, char := range str {
 			if char == '\n' {
+				tempCols[currentCol] = utf8.AppendRune(tempCols[currentCol], char)
 				break
 			}
 
@@ -140,7 +194,7 @@ func DataToDoc(data []byte) *db.Doc {
 			tempCols[currentCol] = utf8.AppendRune(tempCols[currentCol], char)
 
 			// Keep track of the length of the columns for splitting following rows
-			if i == 0 && currentCol < 3 {
+			if rowidx == 0 && currentCol < 3 {
 				charCounts[currentCol]++
 			}
 
@@ -151,7 +205,7 @@ func DataToDoc(data []byte) *db.Doc {
 			colLen := len(tempCols[currentCol])
 			maxLen := getColMaxLength(currentCol)
 
-			if char == ' ' && str[ensureSafeIndex(j+1, len(str))] != ' ' && colLen >= maxLen && currentCol < 3 {
+			if char == ' ' && str[ensureSafeIndex(charIdx+1, len(str))] != ' ' && colLen >= maxLen && currentCol < 3 {
 				currentCol++
 				seenTwoSpace = false
 				prevChar = 0
@@ -159,7 +213,7 @@ func DataToDoc(data []byte) *db.Doc {
 			}
 
 			// Check if the length of the current column is at the max length
-			if i > 0 && colLen == charCounts[currentCol] {
+			if rowidx > 0 && colLen == charCounts[currentCol] {
 				// if true increment the col number
 				currentCol++
 				seenTwoSpace = false
