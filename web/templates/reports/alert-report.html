@@ -20,97 +20,24 @@
         <div class="bg-stone-200 border border-stone-400 p-2 border-l-0 col-span-4">Naturaleza</div>
         <div class="bg-stone-200 border border-stone-400 p-2 border-l-0 col-span-4">Acuerdo</div>
 
+
+        {{range .Alerts}}
+            <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">{{FormatDate .LastAccordDate.Time}}</div>
+            <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">{{.CaseId}}</div>
+            <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">{{GetNature .NatureCode}}</div>
+            {{if eq .LastAccord.String ""}}
+            <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-secondary-600 text-xs">No se encoontró acuerdo en el ultimo mes</div>
+            {{else}}
+            <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">{{.LastAccord.String}}</div>
+            {{end}}
+        {{end}}
         <!-- Example -->
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
-
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
-        <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
+        {{/* 
+            <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 col-span-2">20-Feb-24</div>
+            <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-2">00084/2003</div>
+            <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4">Juicios Sucesorios</div>
+            <div class="bg-stone-50 border border-stone-400 p-2 border-t-0 border-l-0 col-span-4 text-xs">SANTIAGO CHAIREZ HERRERA A BIENES DE: MARIA DEJESUS HERRERA GONZALEZ VDA DE GURROLA</div>
+        */}}
     </div>
 </main>
 

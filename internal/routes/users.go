@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -121,6 +122,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Add("Content-Type", "text/html")
 	w.WriteHeader(200)
 	w.Write([]byte("<p>Creación exitosa</p>"))
+
+	dirPath := fmt.Sprintf("web/static/reports/%v", data.Id)
+	err = os.Mkdir(dirPath, 0666)
+
+	if err != nil {
+		fmt.Printf("MkDir Err: %v", err)
+	}
 }
 
 func SignInUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

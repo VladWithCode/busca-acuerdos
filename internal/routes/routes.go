@@ -43,11 +43,13 @@ func NewRouter() http.Handler {
 	router.POST("/api/users", CreateUser)
 
 	// Report Routes
-	router.GET("/report", ReportHandler)
+	router.GET("/report", auth.WithAuthMiddleware(ReportHandler))
 
 	// Alert Routes
 	router.POST("/api/alerts", auth.WithAuthMiddleware(CreateAlert))
 	router.POST("/api/alerts/test", SendTestMessage)
+	router.GET("/api/alerts/report/:userId", GetReportForUser)
+	router.POST("/api/alerts/report/:userId", CreatePDFForReport)
 
 	router.GET("/api/cases/accord", auth.WithAuthMiddleware(SearchAccord))
 

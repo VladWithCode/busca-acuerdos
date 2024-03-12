@@ -93,6 +93,38 @@ func FindAlertsByUser(userId string) (*[]Alert, error) {
 	return &alerts, nil
 }
 
+func FindAutoReportAlertsForUser(userId string) (*[]Alert, error) {
+	conn, err := GetPool()
+	defer conn.Release()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var alerts []Alert
+
+	rows, err := conn.Query(
+		ctx,
+		"SELECT * FROM alerts WHERE user_id = $1 AND active = TRUE",
+		userId,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Refer to https://stackoverflow.com/questions/61704842/how-to-scan-a-queryrow-into-a-struct-with-pgx
+	alerts, err = pgx.CollectRows[Alert](rows, pgx.RowToStructByName[Alert])
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &alerts, nil
+}
+
 func CreateAlert(userId string, caseId string, natureCode string) (*Alert, error) {
 	conn, err := GetPool()
 	defer conn.Release()

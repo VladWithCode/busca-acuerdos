@@ -14,7 +14,7 @@ import (
 const fileUrl = "http://tsjdgo.gob.mx/Recursos/images/flash/ListasAcuerdos/%v/%v.pdf"
 
 func GenRegExp(caseId string) (*regexp.Regexp, error) {
-	return regexp.Compile(fmt.Sprintf(`(?m)^(\d[^\n]*%v[^\n][^\d]*)$`, caseId))
+	return regexp.Compile(fmt.Sprintf(`(?m)^(\d[^\n]*%v\s[^\n][^\d]*)$`, caseId))
 }
 
 func GetFile(date, caseType string) (pdfData []byte, err error) {
