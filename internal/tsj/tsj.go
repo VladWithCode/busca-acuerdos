@@ -181,7 +181,6 @@ func DataToDoc(data []byte) *db.Doc {
 
 		for charIdx, char := range str {
 			if char == '\n' {
-				tempCols[currentCol] = utf8.AppendRune(tempCols[currentCol], char)
 				break
 			}
 
