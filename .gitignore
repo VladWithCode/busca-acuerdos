@@ -1,1 +1,7 @@
 ./main
+
+# Ignore files in cmd dir
+cmd/auto-report/auto-report
+
+# Ignore report dirs
+web/static/reports/*/
