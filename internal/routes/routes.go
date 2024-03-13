@@ -48,7 +48,7 @@ func NewRouter() http.Handler {
 	// Alert Routes
 	router.GET("/api/alerts/all", TestAllAlerts)
 	router.POST("/api/alerts", auth.WithAuthMiddleware(CreateAlert))
-	router.POST("/api/alerts/test", SendTestMessage)
+	//router.POST("/api/alerts/test", SendTestMessage)
 	router.GET("/api/alerts/report/:userId", GetReportForUser)
 	router.POST("/api/alerts/report/:userId", CreatePDFForReport)
 
