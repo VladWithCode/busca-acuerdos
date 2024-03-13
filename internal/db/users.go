@@ -8,16 +8,16 @@ import (
 )
 
 type User struct {
-	Id                    string `json:"id"`
-	Name                  string `json:"name"`
-	Lastname              string `json:"lastname"`
-	Username              string `json:"username"`
-	Email                 string `json:"email"`
-	Phone                 string `json:"phone"`
-	Password              string `json:"password"`
+	Id                    string `json:"id" db:"id"`
+	Name                  string `json:"name" db:"name"`
+	Lastname              string `json:"lastname" db:"lastname"`
+	Username              string `json:"username" db:"username"`
+	Email                 string `json:"email" db:"email"`
+	Phone                 string `json:"phone" db:"phone_number"`
+	Password              string `json:"password" db:"password"`
 	Alerts                []Alert
-	SubscriptionActive    bool      `json:"subscriptionActive"`
-	SubscriptionExpiresAt time.Time `json:"subscriptionExpiresAt"`
+	SubscriptionActive    bool      `json:"subscriptionActive" db:"subscription_active"`
+	SubscriptionExpiresAt time.Time `json:"subscriptionExpiresAt" db:"subscription_expires_at"`
 }
 
 func (u *User) ValidatePass(pw string) error {
