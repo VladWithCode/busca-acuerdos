@@ -31,7 +31,23 @@ type Alert struct {
 	*/
 }
 
-type AutoReportAlerts map[string][]Alert
+// type AutoReportAlerts map[string][]Alert
+type AutoReportAlert struct {
+	Id             string         `json:"id" db:"id"`
+	CaseId         string         `json:"caseId" db:"case_id"`
+	NatureCode     string         `json:"natureCode" db:"nature_code"`
+	LastAccord     sql.NullString `json:"lastAccord" db:"last_accord"`
+	LastAccordDate sql.NullTime   `json:"lastAccordDate" db:"last_accord_date"`
+}
+
+type AutoReportUser struct {
+	Id       string
+	Name     string
+	Lastname string
+	Email    string
+	Phone    string
+	Alerts   []AutoReportAlert
+}
 
 func FindAlertById(id string) (*Alert, error) {
 	conn, err := GetPool()
@@ -128,7 +144,7 @@ func FindAutoReportAlertsForUser(userId string) (*[]Alert, error) {
 	return &alerts, nil
 }
 
-func FindAllAutoReportAlerts() (*AutoReportAlerts, error) {
+func FindAutoReportAlertsWithUserData() ([]*AutoReportUser, error) {
 	conn, err := GetPool()
 	defer conn.Release()
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -138,28 +154,30 @@ func FindAllAutoReportAlerts() (*AutoReportAlerts, error) {
 		return nil, err
 	}
 
-	alertMap := AutoReportAlerts{}
+	var resultUsers = []*AutoReportUser{}
 
-	rows, err := conn.Query(ctx, "SELECT user_id, ARRAY_AGG((id, user_id, case_id, nature_code, active, last_accord)) AS rows FROM (SELECT * FROM alerts WHERE active = true) AS subq GROUP BY user_id")
+	rows, err := conn.Query(ctx, "SELECT users.id, users.name, users.lastname, users.email, users.phone_number, ARRAY_AGG((alerts.id, alerts.case_id, alerts.nature_code, alerts.last_accord, alerts.last_accord_date)) AS alerts FROM users LEFT JOIN alerts ON users.id = alerts.user_id WHERE alerts.active = true GROUP BY users.id, users.id, users.name, users.lastname, users.email, users.phone_number;")
 
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		var userId string
-		var tempArr pgtype.Array[Alert]
+		var user AutoReportUser
+		var tempArr pgtype.Array[AutoReportAlert]
 
-		err = rows.Scan(&userId, &tempArr)
+		err = rows.Scan(&user.Id, &user.Name, &user.Lastname, &user.Email, &user.Phone, &tempArr)
 
 		if err != nil {
 			return nil, err
 		}
 
-		alertMap[userId] = tempArr.Elements
+		user.Alerts = tempArr.Elements
+
+		resultUsers = append(resultUsers, &user)
 	}
 
-	return &alertMap, nil
+	return resultUsers, nil
 }
 
 func CreateAlert(userId string, caseId string, natureCode string) (*Alert, error) {
