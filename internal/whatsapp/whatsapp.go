@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/vladwithcode/juzgados/internal/db"
 )
 
 type TemplateVar map[string]interface{}
@@ -104,4 +107,59 @@ func SendTemplateMessage(phoneNumber string, data TemplateData) error {
 	}
 
 	return postCloudAPIMessage(reqPayload)
+}
+
+func SendReportMessage(userData db.AutoReportUser, pdfUrl string) error {
+	var (
+		headerVars []TemplateVar
+		bodyVars   []TemplateVar
+	)
+
+	y, m, d := time.Now().Date()
+
+	var (
+		dStr string
+		mStr string
+	)
+
+	if d < 10 {
+		dStr = fmt.Sprintf("0%d", d)
+	} else {
+		dStr = fmt.Sprintf("%d", d)
+	}
+
+	if m < 10 {
+		mStr = fmt.Sprintf("0%d", m)
+	} else {
+		mStr = fmt.Sprintf("%d", m)
+	}
+
+	headerVars = append(headerVars, TemplateVar{
+		"type": "document",
+		"document": struct {
+			Link     string `json:"link"`
+			Filename string `json:"filename"`
+		}{Link: pdfUrl, Filename: "reporte.pdf"},
+	})
+
+	bodyVars = append(bodyVars, TemplateVar{
+		"type": "text",
+		"text": fmt.Sprintf("%v %v", userData.Name, userData.Lastname),
+	})
+	bodyVars = append(bodyVars, TemplateVar{
+		"type": "date_time",
+		"date_time": struct {
+			FallbackValue string `json:"fallback_value"`
+		}{
+			FallbackValue: fmt.Sprintf("%v-%v-%v", y, mStr, dStr),
+		},
+	})
+
+	err := SendTemplateMessage("+526183188452", TemplateData{
+		TemplateName: "report_file",
+		HeaderVars:   headerVars,
+		BodyVars:     bodyVars,
+	})
+
+	return err
 }
