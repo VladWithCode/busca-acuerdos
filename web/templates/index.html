@@ -36,11 +36,13 @@
         tl.from("[data-paraph]", { opacity: 0, ease: "power2.inOut" })
         tl.from("[data-form]", { opacity: 0, ease: "power2.inOut"}, "<0.4")
 
-        document.addEventListener("htmx:afterSwap", function (e) {
-            if (e.detail.pathInfo.path !== '/api/cases')
-                return
+        document.addEventListener("htmx:beforeSwap", function (e) {
+            gsap.to("[data-spinner]", { scale: 0, opacity: 0, duration: .3, ease: "power2.inOut" })
+        })
 
-            
+        document.addEventListener("htmx:afterSwap", function (e) {
+            let tl = gsap.timeline()
+            tl.from("[data-case-card]", { y: '-100%', opacity: 0, ease: "power2.inOut", duration: .6, stagger: .4 })            
         })
     })
 </script>
@@ -138,6 +140,10 @@
                         return
                     }
                     let tl = gsap.timeline()
+                    htmx.on('htmx:afterSwap', () => {
+                        type = ''
+                        cases = []
+                    })
 
                     tl.to('[data-form]', { x: '-100%', opacity: 0, duration: .4, ease: 'power2.inOut' })
                     tl.to('[data-result-list]', { x: '-100%', opacity: 1, duration: .4, ease: 'power2.inOut' }, '<.2')
@@ -148,8 +154,7 @@
 {{end}}
 
 {{define "results"}}
-    <div class="relative grid grid-cols-1 auto-rows-fr col-start-2 row-start-1 px-4" data-result-list="">
+    <div class="relative grid grid-cols-1 gap-3 auto-rows-fr col-start-2 row-start-1 px-4" data-result-list="">
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-16 rounded-full border-4 border-transparent border-t-primary-900 border-l-primary-900" data-spinner=""></div>
     </div>
 {{end}}
-
