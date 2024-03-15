@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -22,7 +23,31 @@ type subscriberMeta struct {
 type subscriberMap map[string][]subscriberMeta
 
 func main() {
-	godotenv.Load(".env")
+	homePath, _ := os.UserHomeDir()
+
+	if homePath == "" {
+		homePath = "/home/vladwb/"
+	}
+
+	stdOut, err := os.OpenFile(homePath+"/.local/log/auto-report.log/log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Printf("Open Log err: %v\n", err)
+	}
+	stdErr, err := os.OpenFile(homePath+"/.local/log/auto-report.log/error", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Printf("Open Err err: %v\n", err)
+	}
+
+	if stdOut != nil && stdErr != nil {
+		os.Stdout = stdOut
+		os.Stderr = stdErr
+	}
+	err = godotenv.Load("/home/vladwb/me/Dev/go/juzgados/.env")
+
+	if err != nil {
+		fmt.Printf("env err: %v\n", err)
+	}
+
 	dbPool, err := db.Connect()
 
 	if err != nil {
@@ -90,9 +115,8 @@ func main() {
 		wg.Add(1)
 		go func(user *db.AutoReportUser) {
 			defer wg.Done()
-			docPath, err := alerts.GenReportPdfWithData(*user)
+			_, err := alerts.GenReportPdfWithData(*user)
 
-			fmt.Printf("docPath: %v\n", docPath)
 			if err != nil {
 				fmt.Printf("GenReport err: %v\n", err)
 				return
