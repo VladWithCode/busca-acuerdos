@@ -7,27 +7,50 @@
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap')
         </style>
-		{{block "scripts" .}}
-		<script src="/htmx.min.js"></script>
+        <link rel="stylesheet" href="/style.css" />
+		{{block "js" .}}
+		<script src="/htmx.min.js" defer></script>
 		<script
 			defer
 			src="/alpine.js"></script>
+        <script defer src="/gsap.js"></script>
 		<script src="/main.js"></script>
-		<link rel="stylesheet" href="/style.css" />
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                gsap.from("[data-menu-toggler]", { x: '100%' })
+            })
+        </script>
 		{{end}}
+
+        {{block "style" .}}
+        <style></style>
+        {{end}}
 	</head>
-	<body class="bg-stone-100 text-stone-950">
+	<body class="bg-stone-50 text-primary-900 overflow-x-hidden">
 		{{block "header" .}}
-		<div class="bg-primary-900 p-4 text-stone-50">
+		<div class="py-4 px-5 ">
 			<div class="container flex justify-between mx-auto">
-				<h2 class="text-xl font-medium">Busca Acuerdos</h2>
-				<nav class="hidden space-x-4">
+				<h2 class="text-xl font-medium">TSJ Search</h2>
+                <nav class="hidden space-x-4">
 					<a class="font-medium text-lg" href="/">Inicio</a>
 					<a class="font-medium text-lg" href="/">Buscador</a>
 					<a class="font-medium text-lg" href="/">Servicios</a>
 					<a class="font-medium text-lg" href="/">Precios</a>
 					<a class="font-medium text-lg" href="/">Contacto</a>
 				</nav>
+
+                <!-- Nav toggler -->
+                <div class="flex items-center ml-auto text-xs font-medium uppercase text-stone-50 bg-primary-900 px-2 rounded-full" data-menu-toggler="">
+                    menu
+
+                    {{/* 
+                    <div class="relative space-y-1">
+                        <div class="w-6 h-0.5 bg-primary-900"></div>
+                        <div class="w-6 h-0.5 bg-primary-900"></div>
+                        <div class="w-6 h-0.5 bg-primary-900"></div>
+                    </div>
+                    */}}
+                </div>
 			</div>
 		</div>
 		{{end}} 
