@@ -1,0 +1,10 @@
+{{range .}}
+<div class="bg-stone-100 shadow shadow-stone-300 rounded p-4" data-case-card="{{.Case}}-{{.NatureCode}}">
+    <h3 class="text-lg font-medium text-primary-800">{{.Case}} - {{.Nature}}</h3>
+    <p class="text-xs text-stone-400">{{FormatDate .AccordDate}}</p>
+    <div class="py-1.5"></div>
+    <p class="">
+        <span class="uppercase font-bold">{{.Nature}}</span> {{.Accord}}
+    </p>
+</div>
+{{end}}
