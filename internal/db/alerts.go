@@ -146,13 +146,13 @@ func FindAutoReportAlertsForUser(userId string) (*[]Alert, error) {
 
 func FindAutoReportAlertsWithUserData() ([]*AutoReportUser, error) {
 	conn, err := GetPool()
-	defer conn.Release()
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-
 	if err != nil {
 		return nil, err
 	}
+	defer conn.Release()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
 
 	var resultUsers = []*AutoReportUser{}
 
