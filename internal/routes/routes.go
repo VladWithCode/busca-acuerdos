@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -98,132 +97,15 @@ func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprintln(w, string(*content))
 }
 
-func waitForGetDoc(wg *sync.WaitGroup, caseID string, responseCh chan<- *db.Doc) {
-	wg.Add(1)
-	defer wg.Done()
-
-	doc, err := db.GetDocByCase(caseID)
-
-	if err != nil {
-		fmt.Printf("[GetDoc err]: %v\n", err)
-		responseCh <- &db.Doc{}
-		return
-	}
-
-	responseCh <- doc
-	return
-}
-
-func waitForFetchDoc(wg *sync.WaitGroup, caseID, searchDate, caseType string, responseCh chan<- *db.Doc) {
-	wg.Add(1)
-	defer wg.Done()
-
-	contentAsStr, err := tsj.FetchAndReadDoc(caseID, searchDate, caseType)
-
-	if err != nil {
-		fmt.Printf("[FetchDoc err]: %v\n", err)
-		responseCh <- &db.Doc{}
-		return
-	}
-
-	doc := tsj.DataToDoc(contentAsStr)
-
-	responseCh <- doc
-}
-
-func findCaseInPast(startDate time.Time, caseID, caseType string, responseCh chan<- *db.Doc, dateCh chan<- *time.Time) {
-
-	// Set Date to previous day
-	startDate = startDate.Local().AddDate(0, 0, -1)
-
-	resultDoc := &db.Doc{}
-
-	for i := 0; i < 31; i++ {
-		year, month, date := startDate.Date()
-		searchDate := fmt.Sprintf("%d%d%d", date, month, year)
-
-		contentAsStr, err := tsj.FetchAndReadDoc(caseID, searchDate, caseType)
-
-		if err != nil {
-			if i == 30 {
-				break
-			}
-
-			startDate = startDate.Local().AddDate(0, 0, -1)
-
-			continue
-		}
-
-		resultDoc = tsj.DataToDoc(contentAsStr)
-		break
-	}
-
-	if empDoc := (db.Doc{}); *resultDoc == empDoc {
-		responseCh <- &empDoc
-		return
-	}
-
-	dateCh <- &startDate
-	resultDoc.AccordDate = startDate
-	responseCh <- resultDoc
-}
-
 func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	caseID := r.URL.Query().Get("id")
 	caseType := r.URL.Query().Get("type")
 
-	wg := sync.WaitGroup{}
+	d := time.Now()
 
-	dbDocCh := make(chan *db.Doc)
-	fetchDocCh := make(chan *db.Doc)
+	doc, err := tsj.GetCaseData(caseID, caseType, &d, tsj.DEFAULT_DAYS_BACK)
 
-	startDate := time.Now()
-	var year, month, date = startDate.Date()
-
-	searchDate := fmt.Sprintf("%d%d%d", date, month, year)
-
-	go waitForGetDoc(&wg, caseID, dbDocCh)
-	go waitForFetchDoc(&wg, caseID, searchDate, caseType, fetchDocCh)
-
-	wg.Wait()
-
-	// Read & close dbDocCh
-	dbDoc := <-dbDocCh
-	close(dbDocCh)
-	// fetchDoc stays open for fetching past docs
-	fetchDoc := <-fetchDocCh
-
-	var doc *db.Doc
-
-	if empDoc := (db.Doc{}); (empDoc) != *fetchDoc {
-		doc = fetchDoc
-		// Since we alredy got the doc we can close fetchDocCh
-		close(fetchDocCh)
-
-		doc.AccordDate = startDate
-		doc.NatureCode = caseType
-	} else if empDoc != *dbDoc {
-		doc = dbDoc
-		doc.NatureCode = caseType
-	} else {
-		dateCh := make(chan *time.Time)
-		go findCaseInPast(startDate, caseID, caseType, fetchDocCh, dateCh)
-
-		fetchDoc = <-fetchDocCh
-		accordDate := <-dateCh
-
-		if *fetchDoc == (empDoc) {
-			respondWithError(w, 404, "No se encontró información del expediente solicitado en el ultimo mes")
-			return
-		}
-
-		doc = fetchDoc
-
-		doc.AccordDate = *accordDate
-		doc.NatureCode = caseType
-	}
-
-	rowTempl, err := template.New("table-row.html").Funcs(template.FuncMap{
+	rowTempl, err := template.New("case-card.html").Funcs(template.FuncMap{
 		"FormatDate": func(date time.Time) string {
 			var (
 				d    int    = date.Day()
@@ -243,10 +125,7 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 			return fmt.Sprintf("%v-%v-%v", dStr, mStr, y)
 		},
-		"Trim": func(str string) string {
-			return strings.TrimSpace(str)
-		},
-	}).ParseFiles("web/templates/table-row.html")
+	}).ParseFiles("web/templates/case-card.html")
 
 	if err != nil {
 		fmt.Println(err)
@@ -254,56 +133,23 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	rowTempl.Execute(w, *doc)
+	rowTempl.Execute(w, []db.Doc{*doc})
 }
 
 func searchCases(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	cases := r.URL.Query()["cases"]
-	resultsCh := make(chan *db.Doc, len(cases))
-	var resultDocs []db.Doc
+	result, err := tsj.GetCasesData(cases, tsj.DEFAULT_DAYS_BACK)
 
-	// Since findCaseInPast starts the day before use tomorrows date
-	// TODO: change findCaseInPast to use the date supplied
-	startDate := time.Now().Local().AddDate(0, 0, 1)
-
-	for _, c := range cases {
-		fakeCh := make(chan *time.Time, 5)
-
-		params := strings.Split(c, "+")
-
-		go func() {
-			findCaseInPast(startDate, params[0], params[1], resultsCh, fakeCh)
-		}()
-	}
-
-	for res := range resultsCh {
-		resultDocs = append(resultDocs, *res)
-
-		if len(resultDocs) == len(cases) {
-			break
-		}
-	}
-
-	emptyCount := 0
-	for _, doc := range resultDocs {
-		if doc == (db.Doc{}) {
-			emptyCount++
-		}
-	}
-
-	if emptyCount == len(cases) {
+	if len(result.NotFoundKeys) == len(cases) {
 		respondWithError(w, 500, "No se encontró ningun documento solicitado")
 		return
 	}
 
-	templ, err := template.New("table-rows.html").Funcs(template.FuncMap{
+	templ, err := template.New("case-card.html").Funcs(template.FuncMap{
 		"FormatDate": func(date time.Time) string {
-			return fmt.Sprintf("%d-%d-%d", date.Day(), date.Month(), date.Year())
+			return fmt.Sprintf("%d-%s-%d", date.Day(), date.Month(), date.Year())
 		},
-		"Trim": func(str string) string {
-			return strings.TrimSpace(str)
-		},
-	}).ParseFiles("web/templates/table-rows.html")
+	}).ParseFiles("web/templates/case-card.html")
 
 	if err != nil {
 		fmt.Println(err)
@@ -312,7 +158,7 @@ func searchCases(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	templ.Execute(w, resultDocs)
+	templ.Execute(w, result.Docs)
 }
 
 func getDocByCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
