@@ -1,94 +1,155 @@
+{{define "style"}}
+<style>
+.page {
+    height: calc(100% - 60px);
+}
+
+.text-prose {
+    width: 28ch;
+}
+</style>
+{{end}}
+
 {{define "content"}}
-<div class="container items-center md:px-8 mx-auto overflow-x-hidden">
-    <h1 class="text-primary-900 text-3xl md:text-5xl text-center mt-16">Busca Acuerdos</h1>
-    <div class="py-6"></div>
-    <div class="space-y-6">
-        <form
-            hx-get="/api/cases"
-            hx-target="#result"
-            hx-swap="beforeend"
-            x-data="{
+<div 
+    class="page container md:px-8 mx-auto overflow-x-hidden text-primary-900"
+    x-data="{
             cases: [],
             id: '',
             type: '',
-            }"
-            data-form="search">
-            <div class="flex w-fit mx-auto text-stone-50 text-sm">
-                <select name="type" id="type" class="w-24 flex-initial bg-secondary-900 border border-secondary-800 rounded-l-full pl-2 py-[8px] text-wrap whitespace-break-spaces focus:outline-0 focus:border-stone-600" x-ref="typeSel" x-model="type">
-                    <option value="">Juzgado</option>
-                    <option value="aux1">Auxiliar 1</option>
-                    <option value="aux2">Auxiliar 2</option>
-                    <option value="civ2">Civil 2</option>
-                    <option value="civ3">Civil 3</option>
-                    <option value="civ4">Civil 4</option>
-                    <option value="fam1">Familiar 1</option>
-                    <option value="fam2">Familiar 2</option>
-                    <option value="fam3">Familiar 3</option>
-                    <option value="fam4">Familiar 4</option>
-                    <option value="fam5">Familiar 5</option>
-                    <option value="mer1">Mercantil 1</option>
-                    <option value="mer2">Mercantil 2</option>
-                    <option value="mer3">Mercantil 3</option>
-                    <option value="mer4">Mercantil 4</option>
-                    <option value="merOral">Mercantil Oral</option>
-                    <option value="seccc">Secretaria Colegiada</option>
-                    <option value="seccu">Secretaria Unitaria</option>
-                    <option value="cjmf1">CJM Familiar 1</option>
-                    <option value="cjmf2">CJM Familiar 2</option>
-                    <option value="trib1">Laboral</option>
-                </select>
-                <input type="text" name="id" id="id" class="text-primary-900 w-32 py-[7px] px-4 border-y border-secondary-800 focus:outline-0 focus:border-primary-900" placeholder="469/2022" x-ref="idInp" x-model="id">
-                <button
-                    type="button"
-                    class="w-24 bg-secondary-900 font-medium rounded-r-full border border-secondary-800 px-2 py-[7px] focus:outline-0 focus:border-primary-800"
-                    @click="if (cases.length === 5) {
-                    alert('Solo se pueden buscar 5 expedientes a la vez')
-                    return
-                    };
-                    if (id === '' || type === '') {
-                    alert('¡Ambos campos son requeridos!')
-                    return
-                    }
+    }">
+    <h1 class="relative text-3xl md:text-5xl text-center mt-16 mb-2" data-title="">Buscar Acuerdos</h1>
+    <div class="relative text-sm font-medium text-prose mx-auto mt-8" data-paraph="">
+        <p class="opacity-90">Busca el ultimo acuerdo para cada expediente que agregues</p>
+    </div>
 
-                    cases.push({
-                    id: id,
-                    type: type,
-                    delFlag: id + '+' + type,
-                    })
-
-                    id = ''
-                    ">Agregar</button>
-            </div>
-            <div class="flex flex-col items-center gap-2 mt-4">
-                <template x-for="c in cases">
-                    <template x-if="c.id !== undefined">
-                        <div class="flex w-4/5 mx-auto gap-2 items-center justify-center">
-                            <input type="hidden" name="cases" id="cases" :value="c.id + '+' + c.type">
-                            <div class="" x-text="c.type"></div>
-                            <div class="font-medium" x-text="c.id"></div>
-                            <button type="button" @click="cases = cases.filter(checkCase => checkCase.delFlag !== c.delFlag)">
-                                <svg class="w-5 h-5 fill-red-700">
-                                    <use href="/svg/close-circle.svg#delete"></use>
-                                </svg>
-                            </button>
-                        </div>
-                    </template>
-                </template>
-                <template x-if="cases.length < 5">
-                    <svg class="w-6 h-6 fill-secondary-900 opacity-45" data-case-placeholder>
-                        <use href="/svg/add-circle.svg#add"></use>
-                    </svg>
-                </template>
-                <button type="submit" class="text-stone-50 w-3/5 bg-secondary-900 font-medium rounded-full border border-stone-400 px-2 py-2 mt-2 mx-auto focus:outline-0 focus:border-stone-600">Buscar</button>
-            </div>
-        </form>
-        <div class="grid grid-cols-12 px-2 text-xs pb-6 md:text-base" id="result">
-            <div class="bg-stone-50 col-span-3 border border-zinc-400 p-2 rounded-tl-md md:col-span-2">Fecha</div>
-            <div class="bg-stone-50 col-span-3 border border-zinc-400 p-2 border-l-0 md:col-span-2">Expediente</div>
-            <div class="bg-stone-50 col-span-4 border border-zinc-400 p-2 border-l-0 md:col-span-4">Naturaleza</div>
-            <div class="bg-stone-50 col-span-2 border border-zinc-400 p-2 border-l-0 rounded-tr-md md:col-span-4">Acuerdo</div>
-        </div>
+    <div class="grid grid-cols-[100%_100%] grid-rows-1 mt-10">
+        {{template "form"}}
+        {{template "results"}}
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        let tl = gsap.timeline({ duration: .3 })
+        tl.from("[data-title]", { y: "-100%", opacity: 0 , ease: "power2.inOut" })
+        tl.from("[data-paraph]", { opacity: 0, ease: "power2.inOut" })
+        tl.from("[data-form]", { opacity: 0, ease: "power2.inOut"}, "<0.4")
+
+        document.addEventListener("htmx:afterSwap", function (e) {
+            if (e.detail.pathInfo.path !== '/api/cases')
+                return
+
+            
+        })
+    })
+</script>
+{{end}}
+
+{{define "form"}}
+    <form
+        class="col-start-1 row-start-1"
+        hx-get="/api/cases"
+        hx-target="[data-result-list]"
+
+        data-form="search">
+        <div class="flex w-full px-2 text-sm gap-x-1">
+            <select name="type" id="type" class="w-24 flex-auto font-medium bg-stone-300 text-primary-900 rounded pl-2 py-[8px] break-words text-ellipsis focus:outline-accent-800" x-ref="typeSel" x-model="type">
+                <option value="">Juzgado</option>
+                <option value="aux1">Auxiliar 1</option>
+                <option value="aux2">Auxiliar 2</option>
+                <option value="civ2">Civil 2</option>
+                <option value="civ3">Civil 3</option>
+                <option value="civ4">Civil 4</option>
+                <option value="fam1">Familiar 1</option>
+                <option value="fam2">Familiar 2</option>
+                <option value="fam3">Familiar 3</option>
+                <option value="fam4">Familiar 4</option>
+                <option value="fam5">Familiar 5</option>
+                <option value="mer1">Mercantil 1</option>
+                <option value="mer2">Mercantil 2</option>
+                <option value="mer3">Mercantil 3</option>
+                <option value="mer4">Mercantil 4</option>
+                <option value="merOral">Mercantil Oral</option>
+                <option value="seccc">Secretaria Colegiada</option>
+                <option value="seccu">Secretaria Unitaria</option>
+                <option value="cjmf1">CJM Familiar 1</option>
+                <option value="cjmf2">CJM Familiar 2</option>
+                <option value="trib1">Laboral</option>
+            </select>
+            <input type="text" name="id" id="id" class="flex-auto rounded bg-stone-300 text-primary-900 w-32 py-[7px] px-4 focus:outline-accent-800 placeholder:text-primary-800 placeholder:font-medium placeholder:text-opacity-60" placeholder="469/2022" x-ref="idInp" x-model="id">
+            <button
+                type="button"
+                class="flex-initial text-stone-50 w-24 bg-primary-800 font-medium rounded px-2 py-[7px] focus:outline-accent-800"
+                @click="if (cases.length === 5) {
+                alert('Solo se pueden buscar 5 expedientes a la vez')
+                return
+                };
+                if (id === '' || type === '') {
+                alert('¡Ambos campos son requeridos!')
+                return
+                }
+
+                let label = $refs.typeSel.selectedOptions[0].textContent
+
+                cases.push({
+                id: id,
+                type: type,
+                delFlag: id + '-' + type,
+                label: label
+                })
+
+                gsap.delayedCall(0, () => {
+                    gsap.to('[data-case=\'' + id + '-' + type + '\']', { y: 0, opacity: 1, duration: .3 })
+                    id = ''
+                })
+                
+                ">Agregar</button>
+        </div>
+        <div class="flex flex-col items-center gap-2 mt-4">
+            <template x-for="c in cases">
+                <div class="flex w-4/5 mx-auto gap-2 items-center justify-center -translate-y-full opacity-0" :data-case="c.delFlag">
+                    <input type="hidden" name="cases" id="cases" :value="c.delFlag">
+                    <div class="" x-text="c.label"></div>
+                    <div class="font-medium" x-text="c.id"></div>
+                    <button type="button" @click="cases = cases.filter(checkCase => checkCase.delFlag !== c.delFlag)">
+                        <svg class="w-5 h-5 fill-red-700">
+                            <use href="/svg/close-circle.svg#delete"></use>
+                        </svg>
+                    </button>
+                </div>
+            </template>
+            <template x-if="cases.length < 5">
+                <div class="relative bg-primary-900 text-stone-50 opacity-45 rounded w-6 h-6">
+                    <span class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-lg font-bold">&plus;</span>
+                    <!--
+                    <svg class="relative w-6 h-6 fill-accent-500 z-10" data-case-placeholder>
+                        <use href="/svg/add-circle.svg#add"></use>
+                    </svg>
+                    -->
+                </div>
+            </template>
+            <button
+                type="submit"
+                class="text-stone-50 w-3/5 bg-primary-800 font-medium rounded px-2 py-2 mt-2 mx-auto focus:outline-0 focus:border-accent-600"
+                @click="
+                    if (cases.length === 0) {
+                        $event.preventDefault()
+                        return
+                    }
+                    let tl = gsap.timeline()
+
+                    tl.to('[data-form]', { x: '-100%', opacity: 0, duration: .4, ease: 'power2.inOut' })
+                    tl.to('[data-result-list]', { x: '-100%', opacity: 1, duration: .4, ease: 'power2.inOut' }, '<.2')
+                    tl.to('[data-spinner]', { rotate: '360deg', duration: .7, repeat: -1, ease: 'power2.inOut' }, '<')
+                ">Buscar</button>
+        </div>
+    </form>
+{{end}}
+
+{{define "results"}}
+    <div class="relative grid grid-cols-1 auto-rows-fr col-start-2 row-start-1 px-4" data-result-list="">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-16 rounded-full border-4 border-transparent border-t-primary-900 border-l-primary-900" data-spinner=""></div>
+    </div>
 {{end}}
 
