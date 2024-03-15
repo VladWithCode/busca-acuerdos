@@ -228,9 +228,9 @@ func DataToDoc(data []byte) *db.Doc {
 		cols[3] = append(cols[3], tempCols[3]...)
 	}
 
-	doc.Case = string(cols[1])
-	doc.Nature = string(cols[2])
-	doc.Accord = string(cols[3])
+	doc.Case = strings.TrimSpace(strings.TrimLeft(string(cols[1]), "0"))
+	doc.Nature = strings.TrimSpace(string(cols[2]))
+	doc.Accord = strings.TrimSpace(string(cols[3]))
 
 	return &doc
 }
