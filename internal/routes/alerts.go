@@ -13,6 +13,14 @@ import (
 	"github.com/vladwithcode/juzgados/internal/tsj"
 )
 
+func RegisterAlertRoutes(router *httprouter.Router) {
+	router.GET("/api/alerts/all", TestAllAlerts)
+	router.POST("/api/alerts", auth.WithAuthMiddleware(CreateAlert))
+
+	router.GET("/api/alerts/report/:userId", GetReportForUser)
+	router.POST("/api/alerts/report/:userId", CreatePDFForReport)
+}
+
 func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
 	err := r.ParseForm()
 

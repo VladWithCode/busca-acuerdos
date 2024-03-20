@@ -17,6 +17,56 @@ import (
 	"github.com/vladwithcode/juzgados/internal/tsj"
 )
 
+func RegisterCaseRoutes(router *httprouter.Router) {
+	router.GET("/api/case", searchCase)
+	router.GET("/api/cases", searchCases)
+	router.GET("/api/cases/accord", auth.WithAuthMiddleware(SearchAccord))
+}
+
+func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	caseID := r.URL.Query().Get("id")
+	caseType := r.URL.Query().Get("type")
+
+	d := time.Now()
+
+	doc, err := tsj.GetCaseData(caseID, caseType, &d, tsj.DEFAULT_DAYS_BACK)
+
+	rowTempl, err := template.New("case-card.html").Funcs(template.FuncMap{
+		"FormatDate": internal.FormatDate,
+	}).ParseFiles("web/templates/case-card.html")
+
+	if err != nil {
+		fmt.Println(err)
+		respondWithError(w, 500, "Couldn't parse row")
+		return
+	}
+
+	rowTempl.Execute(w, []db.Doc{*doc})
+}
+
+func searchCases(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	cases := r.URL.Query()["cases"]
+	result, err := tsj.GetCasesData(cases, tsj.DEFAULT_DAYS_BACK)
+
+	if len(result.NotFoundKeys) == len(cases) {
+		respondWithError(w, 500, "No se encontró ningun documento solicitado")
+		return
+	}
+
+	templ, err := template.New("case-card.html").Funcs(template.FuncMap{
+		"FormatDate": internal.FormatDate,
+	}).ParseFiles("web/templates/case-card.html")
+
+	if err != nil {
+		fmt.Println(err)
+		respondWithError(w, 500, "Couldn't parse row")
+
+		return
+	}
+
+	templ.Execute(w, result.Docs)
+}
+
 func SearchAccord(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
 	err := r.ParseForm()
 

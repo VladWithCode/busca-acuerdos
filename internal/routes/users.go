@@ -2,7 +2,6 @@ package routes
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -15,6 +14,13 @@ import (
 	"github.com/vladwithcode/juzgados/internal/auth"
 	"github.com/vladwithcode/juzgados/internal/db"
 )
+
+func RegisterUserRoutes(router *httprouter.Router) {
+	router.GET("/dashboard", auth.WithAuthMiddleware(dashboardHandler))
+	router.GET("/iniciar-sesion", SignInHandler)
+	router.POST("/sign-in", SignInUser)
+	router.POST("/user", CreateUser)
+}
 
 func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
 	user, err := db.GetUserByUsername(auth.Username)
@@ -31,31 +37,14 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 
 	templ, err := template.New("layout.html").Funcs(template.FuncMap{
-		"IsEven": func(n int) bool {
-			return n%2 == 0
-		},
 		"GetNature": func(nc string) string {
 			return internal.CodesMap[nc]
 		},
-		// Refer to https://stackoverflow.com/questions/18276173/calling-a-template-with-several-pipeline-parameters
-		"dict": func(values ...interface{}) (map[string]interface{}, error) {
-			if len(values)%2 != 0 {
-				return nil, errors.New("invalid dict call")
-			}
-			dict := make(map[string]interface{}, len(values)/2)
-			for i := 0; i < len(values); i += 2 {
-				key, ok := values[i].(string)
-				if !ok {
-					return nil, errors.New("dict keys must be strings")
-				}
-				dict[key] = values[i+1]
-			}
-			return dict, nil
-		},
-	}).ParseFiles("web/templates/layout.html", "web/templates/dashboard.html")
+		"FormatDate": internal.FormatDate,
+	}).ParseFiles("web/templates/layout.html", "web/templates/alert-card.html", "web/templates/dashboard.html")
 
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
+		fmt.Printf("Parse err: %v\n", err)
 		respondWithError(w, 500, "Ocurrio un error inseperado")
 		return
 	}

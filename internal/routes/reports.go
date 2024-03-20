@@ -15,6 +15,10 @@ import (
 	"github.com/vladwithcode/juzgados/internal/tsj"
 )
 
+func RegisterReportRoutes(router *httprouter.Router) {
+	router.GET("/report", auth.WithAuthMiddleware(ReportHandler))
+}
+
 func GetReportForUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	userId := ps.ByName("userId")
 	alerts, err := FindAlerts(userId)
@@ -26,25 +30,7 @@ func GetReportForUser(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 
 	templ, err := template.New("layout.html").Funcs(template.FuncMap{
-		"FormatDate": func(date time.Time) string {
-			var (
-				d    int    = date.Day()
-				m    int    = int(date.Month())
-				y    int    = date.Year()
-				mStr string = fmt.Sprint(m)
-				dStr string = fmt.Sprint(d)
-			)
-
-			if m < 10 {
-				mStr = fmt.Sprintf("0%d", m)
-			}
-
-			if d < 10 {
-				dStr = fmt.Sprintf("0%d", d)
-			}
-
-			return fmt.Sprintf("%v-%v-%v", dStr, mStr, y)
-		},
+		"FormatDate": internal.FormatDate,
 		"GetNature": func(nc string) string {
 			return internal.CodesMap[nc]
 		},
@@ -75,25 +61,7 @@ func ReportHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params,
 	}
 
 	templ, err := template.New("layout.html").Funcs(template.FuncMap{
-		"FormatDate": func(date time.Time) string {
-			var (
-				d    int    = date.Day()
-				m    int    = int(date.Month())
-				y    int    = date.Year()
-				mStr string = fmt.Sprint(m)
-				dStr string = fmt.Sprint(d)
-			)
-
-			if m < 10 {
-				mStr = fmt.Sprintf("0%d", m)
-			}
-
-			if d < 10 {
-				dStr = fmt.Sprintf("0%d", d)
-			}
-
-			return fmt.Sprintf("%v-%v-%v", dStr, mStr, y)
-		},
+		"FormatDate": internal.FormatDate,
 		"GetNature": func(nc string) string {
 			return internal.CodesMap[nc]
 		},

@@ -6,53 +6,34 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/vladwithcode/juzgados/internal/auth"
-	"github.com/vladwithcode/juzgados/internal/db"
 	"github.com/vladwithcode/juzgados/internal/reader"
-	"github.com/vladwithcode/juzgados/internal/tsj"
 )
-
-var Router *httprouter.Router
 
 func NewRouter() http.Handler {
 	router := httprouter.New()
 
 	// Static Routes
 	router.GET("/", indexHandler)
-	router.GET("/dashboard", auth.WithAuthMiddleware(dashboardHandler))
 
 	// API Routes
-	router.GET("/api/docs", getDocs)
-	router.POST("/api/docs", createDoc)
 	router.GET("/api/file", getFile)
-	router.GET("/api/case", searchCase)
-	router.GET("/api/cases", searchCases)
-	router.GET("/api/docs-by-case/:caseID", getDocByCase)
-	router.GET("/api/docs/:ID", getDocByID)
 
+	// Doc Routes
+	RegisterDocRoutes(router)
+	// Case Routes
+	RegisterCaseRoutes(router)
 	// User Routes
-	router.GET("/iniciar-sesion", SignInHandler)
-	router.POST("/sign-in", SignInUser)
-	router.POST("/api/users", CreateUser)
-
+	RegisterUserRoutes(router)
 	// Report Routes
-	router.GET("/report", auth.WithAuthMiddleware(ReportHandler))
-
+	RegisterReportRoutes(router)
 	// Alert Routes
-	router.GET("/api/alerts/all", TestAllAlerts)
-	router.POST("/api/alerts", auth.WithAuthMiddleware(CreateAlert))
-	//router.POST("/api/alerts/test", SendTestMessage)
-	router.GET("/api/alerts/report/:userId", GetReportForUser)
-	router.POST("/api/alerts/report/:userId", CreatePDFForReport)
+	RegisterAlertRoutes(router)
 
-	router.GET("/api/cases/accord", auth.WithAuthMiddleware(SearchAccord))
-
+	// Serve static content
 	router.NotFound = http.FileServer(http.Dir("web/static"))
 
 	return router
@@ -84,7 +65,6 @@ func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	month, _ := strconv.Atoi(segments[1])
 
 	date = fmt.Sprintf("%d%d%s", day, month, segments[0])
-	fmt.Printf("date: %v\n", date)
 
 	content, err := reader.Reader(date, caseType)
 
@@ -95,140 +75,6 @@ func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	fmt.Fprintln(w, string(*content))
-}
-
-func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	caseID := r.URL.Query().Get("id")
-	caseType := r.URL.Query().Get("type")
-
-	d := time.Now()
-
-	doc, err := tsj.GetCaseData(caseID, caseType, &d, tsj.DEFAULT_DAYS_BACK)
-
-	rowTempl, err := template.New("case-card.html").Funcs(template.FuncMap{
-		"FormatDate": func(date time.Time) string {
-			var (
-				d    int    = date.Day()
-				m    int    = int(date.Month())
-				y    int    = date.Year()
-				mStr string = fmt.Sprint(m)
-				dStr string = fmt.Sprint(d)
-			)
-
-			if m < 10 {
-				mStr = fmt.Sprintf("0%d", m)
-			}
-
-			if d < 10 {
-				dStr = fmt.Sprintf("0%d", d)
-			}
-
-			return fmt.Sprintf("%v-%v-%v", dStr, mStr, y)
-		},
-	}).ParseFiles("web/templates/case-card.html")
-
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(w, 500, "Couldn't parse row")
-		return
-	}
-
-	rowTempl.Execute(w, []db.Doc{*doc})
-}
-
-func searchCases(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	cases := r.URL.Query()["cases"]
-	result, err := tsj.GetCasesData(cases, tsj.DEFAULT_DAYS_BACK)
-
-	if len(result.NotFoundKeys) == len(cases) {
-		respondWithError(w, 500, "No se encontró ningun documento solicitado")
-		return
-	}
-
-	templ, err := template.New("case-card.html").Funcs(template.FuncMap{
-		"FormatDate": func(date time.Time) string {
-			return fmt.Sprintf("%d-%s-%d", date.Day(), date.Month(), date.Year())
-		},
-	}).ParseFiles("web/templates/case-card.html")
-
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(w, 500, "Couldn't parse row")
-
-		return
-	}
-
-	templ.Execute(w, result.Docs)
-}
-
-func getDocByCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	rawCaseId := ps.ByName("caseID")
-
-	caseID, err := url.PathUnescape(rawCaseId)
-
-	if err != nil {
-		respondWithError(w, 500, "El expediente ingresado es invalido")
-		return
-	}
-
-	doc, err := db.GetDocByCase(caseID)
-
-	if err != nil {
-		respondWithError(w, 500, "No se encontró entrada para el caso solicitado")
-		return
-	}
-
-	respondWithJSON(w, 200, doc)
-}
-
-func getDocByID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	id := ps.ByName("ID")
-	doc, err := db.GetDocByID(id)
-
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(w, 500, "No se encontró el documento solicitado")
-		return
-	}
-
-	respondWithJSON(w, 200, doc)
-}
-
-func getDocs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	docs, err := db.GetDocs()
-
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(w, 500, "No se pudo recuperar los documentos")
-		return
-	}
-
-	respondWithJSON(w, 200, docs)
-}
-
-func createDoc(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	data := db.Doc{}
-	decoder := json.NewDecoder(r.Body)
-
-	err := decoder.Decode(&data)
-
-	if err != nil {
-		fmt.Printf("Malformed json data: %v\n", err)
-		respondWithError(w, 400, "La información proporcionada es inválida")
-		return
-	}
-
-	err = db.CreateDoc(data.ID, data.Case, data.Nature, data.NatureCode, data.Accord, data.AccordDate)
-
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(w, 500, "No se pudo crear el documento")
-		return
-	}
-
-	w.Header().Add("Content-Type", "text/html")
-	w.WriteHeader(200)
-	w.Write([]byte("<p>Creación exitosa</p>"))
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
