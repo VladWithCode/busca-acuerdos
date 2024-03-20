@@ -1,0 +1,29 @@
+{{define "alert-card"}}
+<div id="alert-listing" class="bg-stone-100 shadow shadow-stone-300 rounded p-4" data-case-card="{{.CaseId}}-{{.NatureCode}}">
+    <h3 class="text-lg font-medium text-primary-800">{{.CaseId}} - {{GetNature .NatureCode}}</h3>
+    <p class="text-xs text-stone-400">
+    {{if .LastAccordDate.Valid}}
+    {{FormatDate .LastAccordDate.Time}}
+    {{else}}
+    Sin fecha registrada
+    {{end}}
+    </p>
+    <div class="py-1.5"></div>
+    <p class="uppercase">
+        <span class="font-bold">{{GetNature .NatureCode}}</span>
+        {{if .LastAccord.Valid}}
+        {{.LastAccord.String}}
+        {{else}}
+        Sin Acuerdo registrado
+        {{end}}
+    </p>
+</div>
+{{end}}
+
+{{define "alert-cards"}}
+<div class="grid grid-cols-1 auto-rows-fr gap-2">
+    {{range .Alerts}}
+    {{template "alert-card" .}}
+    {{end}}
+</div>
+{{end}}

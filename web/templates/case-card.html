@@ -1,5 +1,10 @@
-<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-16 rounded-full border-4 border-transparent border-t-primary-900 border-l-primary-900 hidden" x-ref="spinner" data-spinner=""></div>
-{{range .}}
+{{define "case-cards"}}
+    {{range .}}
+    {{template "case-card" .}}
+    {{end}}
+{{end}}
+
+{{define "case-card"}}
 <div class="bg-stone-100 shadow shadow-stone-300 rounded p-4" data-case-card="{{.Case}}-{{.NatureCode}}">
     <h3 class="text-lg font-medium text-primary-800">{{.Case}} - {{.Nature}}</h3>
     <p class="text-xs text-stone-400">{{FormatDate .AccordDate}}</p>
@@ -10,6 +15,8 @@
 </div>
 {{end}}
 
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-16 rounded-full border-4 border-transparent border-t-primary-900 border-l-primary-900 hidden" x-ref="spinner" data-spinner=""></div>
+{{template "case-cards" .}}
 <button
     class="rounded px-4 py-2 bg-primary-900 text-stone-50 self-center justify-self-center" 
     data-search-again-btn=""

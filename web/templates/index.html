@@ -1,9 +1,5 @@
 {{define "style"}}
 <style>
-.page {
-    height: calc(100% - 60px);
-}
-
 .text-prose {
     width: 28ch;
 }
@@ -12,7 +8,7 @@
 
 {{define "content"}}
 <div 
-    class="page container md:px-8 mx-auto overflow-x-hidden text-primary-900"
+    class="page container md:px-8 mx-auto overflow-x-hidden bg-stone-50 text-primary-900"
     x-data="{
             cases: [],
             id: '',

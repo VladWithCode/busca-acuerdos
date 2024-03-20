@@ -1,23 +1,29 @@
+{{define "style"}}
+<style>
+</style>
+{{end}}
+
 {{define "content"}}
-<div class="container flex md:px-8 mx-auto py-28 overflow-x-hidden">
+<div class="page container bg-stone-50 md:px-8 mx-auto p-4 overflow-x-hidden overflow-y-auto">
+    <h1 class="text-xl font-semibold text-primary-800 pt-12 mb-6">Iniciar Sesión</h1>
     <form
-        class="w-4/5 max-w-sm m-auto shadow shadow-stone-300 space-y-4 pt-4 p-8 bg-stone-200 rounded"
+        class="max-w-sm space-y-2"
         hx-post="/sign-in"
         x-data="{ showPassword: false }">
-        <h1 class="text-xl font-semibold text-primary-800 text-center">Iniciar Sesión</h1>
         <div class="space-y-1">
-            <label for="username" class="text-stone-500 text-xs font-semibold uppercase">Usuario</label>
-            <input type="text" name="username" id="username" class="w-full rounded shadow-inner shadow-stone-300 p-2 focus:outline-primary-800">
+            <label for="username" class="text-primary-800 text-xs font-semibold uppercase">Usuario</label>
+            <input type="text" name="username" id="username" class="w-full rounded bg-stone-300 text-primary-900 p-2 focus:outline-primary-800">
         </div>
         <div class="space-y-1">
-            <label for="password" class="text-stone-500 text-xs font-semibold uppercase">Contraseña</label>
-            <input type="password" name="password" id="password" class="w-full rounded shadow-inner shadow-stone-300 p-2 focus:outline-primary-800" :type="showPassword ? 'text' : 'password'">
+            <label for="password" class="text-primary-800 text-xs font-semibold uppercase">Contraseña</label>
+            <input type="password" name="password" id="password" class="w-full rounded bg-stone-300 text-primary-900 shadow-inner shadow-stone-200 p-2 focus:outline-primary-800" :type="showPassword ? 'text' : 'password'">
         </div>
-        <div class="flex gap-2 items-center">
-            <input type="checkbox" name="showPassword" id="showPassword" @change="showPassword = $event.target.checked">
+        <div class="flex gap-2 items-center py-4">
+            <input class="p-1" type="checkbox" name="showPassword" id="showPassword" @change="showPassword = $event.target.checked">
             <label for="showPassword" class="text-stone-500">Mostrar contraseña</label>
         </div>
         <button class="w-full text-zinc-50 bg-primary-800 px-4 py-2 rounded uppercase">Acceder</button>
     </form>
+
 </div>
 {{end}}
