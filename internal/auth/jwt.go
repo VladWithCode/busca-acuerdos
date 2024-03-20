@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 	"strings"
@@ -113,7 +114,17 @@ func WithAuthMiddleware(next AuthedHandler) httprouter.Handle {
 
 func RejectUnauthenticated(w http.ResponseWriter, r *http.Request, _ httprouter.Params, reason string) {
 	fmt.Printf("reason: %v\n", reason)
+
 	w.Header().Add("Content-Type", "text/html")
-	w.WriteHeader(503)
-	w.Write([]byte("<p>Unauthorized</p>"))
+	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/sign-in.html")
+
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(500)
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+	}
+
+	w.WriteHeader(401)
+	w.Header().Add("HX-Location", "/iniciar-sesion")
+	templ.Execute(w, nil)
 }
