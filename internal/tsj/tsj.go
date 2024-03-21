@@ -21,6 +21,7 @@ const (
 )
 
 const DEFAULT_DAYS_BACK = 31
+const EXTENDED_DAYS_BACK = 90
 
 type NotFoundError struct {
 	Message string
@@ -46,6 +47,10 @@ func (r *GetCasesResult) AppendNotFound(key string) {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 	r.NotFoundKeys = append(r.NotFoundKeys, key)
+}
+
+func GenRegExp(caseId string) (*regexp.Regexp, error) {
+	return regexp.Compile(fmt.Sprintf(`(?m)^(\d[^\n]*%v\s[^\n][^\d]*)$`, caseId))
 }
 
 func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (*db.Doc, error) {
@@ -102,7 +107,7 @@ func GetCasesData(caseKeys []string, daysBack uint) (*GetCasesResult, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			params := strings.Split(caseKey, "-")
+			params := strings.Split(caseKey, "+")
 			caseId, caseType := params[0], params[1]
 
 			doc, err := GetCaseData(caseId, caseType, nil, int(daysBack))
@@ -128,7 +133,7 @@ func FetchAndReadDoc(caseId, searchDate, caseType string) ([]byte, error) {
 		return nil, err
 	}
 
-	searchExp, err := reader.GenRegExp(caseId)
+	searchExp, err := GenRegExp(caseId)
 
 	if err != nil {
 		return nil, err
@@ -226,6 +231,7 @@ func DataToDoc(data []byte) *db.Doc {
 		cols[1] = append(cols[1], tempCols[1]...)
 		cols[2] = append(cols[2], tempCols[2]...)
 		cols[3] = append(cols[3], tempCols[3]...)
+		cols[3] = append(cols[3], byte('\n'))
 	}
 
 	doc.Case = strings.TrimSpace(strings.TrimLeft(string(cols[1]), "0"))

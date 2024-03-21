@@ -8,14 +8,9 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"regexp"
 )
 
 const fileUrl = "http://tsjdgo.gob.mx/Recursos/images/flash/ListasAcuerdos/%v/%v.pdf"
-
-func GenRegExp(caseId string) (*regexp.Regexp, error) {
-	return regexp.Compile(fmt.Sprintf(`(?m)^(\d[^\n]*%v\s[^\n][^\d]*)$`, caseId))
-}
 
 func GetFile(date, caseType string) (pdfData []byte, err error) {
 	fetchUrl := fmt.Sprintf(fileUrl, date, caseType)
