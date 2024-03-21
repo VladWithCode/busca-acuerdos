@@ -8,7 +8,6 @@
             @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap')
         </style>
         <link rel="stylesheet" href="/style.css" />
-		{{block "js" .}}
 		<script src="/htmx.min.js" defer></script>
 		<script
 			defer
@@ -41,14 +40,76 @@
                     })
                 }
             })
+            function createSuccessModal(options) {
+                let message = options?.message || "¡Operación Exitosa!"
+                let btnLabel = options?.btnLabel || "Continuar"
+                let successModal = `<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50 opacity-0" data-confirm-modal="success" x-data="{}" x-ref="confirmModal">
+    <div class="w-4/5 max-w-screen-md bg-stone-100 rounded p-2 shadow shadow-stone-300 m-auto space-y-3 scale-0" data-confirm-modal-card="">
+        <div class="h-32 w-32 mx-auto">
+            <svg class="w-full h-full fill-emerald-500">
+                <use href="/svg/success.svg#success"></use>
+            </svg>
+        </div>
+        <p class="mx-auto">
+            ${message}
+        </p>
+        <button 
+            class="w-full py-2 bg-primary-800 text-stone-50 rounded hover:scale-[1.01] active:scale-95 transition"
+            @click="
+                $event.preventDefault()
+                const confirmEvt = new Event('modal:confirm')
+                const tl = gsap.timeline({ duration: .3, ease: 'power2.inOut' })
+
+                tl.to('#modal-wrapper', { opacity: 0 })
+                tl.to('[data-confirm-modal-card]', { scale: 0 }, '<')
+                tl.to('#modal-wrapper', { visibility: 'hidden' })
+                gsap.delayedCall(1, function() {
+                    document.body.dispatchEvent(confirmEvt)
+                    $refs.confirmModal.remove()
+                })
+        ">${btnLabel}</button>
+    </div>
+</div>`     
+                return successModal
+            }
+            
+            function createErrorModal(options) {
+                let message = options?.message || "Ocurrio un error inesperado"
+                let btnLabel = options?.btnLabel || "Continuar"
+                let errorModal = `<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50 opacity-0" data-confirm-modal="error" x-data="" x-ref="confirmModal">
+    <div class="w-4/5 max-w-screen-md bg-stone-100 rounded p-2 shadow shadow-stone-300 m-auto space-y-3 scale-0" data-confirm-modal-card="">
+        <div class="h-32 w-32 mx-auto">
+            <svg class="h-full w-full fill-secondary-500">
+                <use href="/svg/close-circle.svg#delete"></use>
+            </svg>
+        </div>
+        <p class="w-[24ch] mx-auto">${message}</p>
+        <button 
+            class="w-full py-2 bg-primary-800 text-stone-50 rounded hover:scale-[1.01] active:scale-95 transition"
+            @click="
+                $event.preventDefault()
+                const confirmEvt = new Event('modal:confirm')
+                const tl = gsap.timeline({ duration: .2, ease: 'power2.inOut' })
+
+                tl.to('[data-confirm-modal]', { opacity: 0 })
+                tl.to('[data-confirm-modal-card]', { scale: 0 }, '<')
+                tl.to('[data-confirm-modal]', { visibility: 'hidden' })
+                gsap.delayedCall(.3, function() {
+                    document.body.dispatchEvent(confirmEvt)
+                    $refs.confirmModal.remove()
+                })
+        ">${btnLabel}</button>
+    </div>
+</div>`
+                return errorModal
+            }
         </script>
-        {{end}}
 
         {{block "style" .}}
         <style></style>
         {{end}}
 	</head>
-	<body class="text-primary-900 overflow-x-hidden overflow-y-auto">
+	<body class="text-primary-900">
 		{{block "header" .}}
         <div class="bg-stone-50 py-4 px-5 flex justify-between mx-auto" x-data="">
             <h2 class="text-xl font-medium">TSJ Search</h2>
@@ -79,7 +140,7 @@
 
         <!-- Mobile Navigation Menu -->
         <div class="fixed h-screen inset-0 text-primary-800 overflow-hidden z-50 w-0" data-mobile-menu="" x-data="">
-            <div class="relative flex flex-col bg-stone-50 ml-auto h-full p-4 z-10">
+            <div class="relative flex flex-col bg-stone-50 ml-auto h-full p-4 z-10 w-full">
                 <div class="flex flex-initial items-center pb-4 relative z-10">
                     <h3 class="text-xl font-bold">Menu</h3>
                     <button class="ml-auto text-3xl font-bold" @click="gsap.to('[data-mobile-menu]', { width: 0, ease: 'power2.inOut', duration: .3 })">&times;</button>
@@ -132,15 +193,18 @@
                 document.body.addEventListener("custom:finish-loading", e => {
                     let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
                     tl.to("[data-loading-modal-card]", { scale: 0 })
-                    tl.set("[data-loading-modal]", { opacity: 0 }, "<")
+                    tl.to("[data-loading-modal]", { opacity: 0 }, "<")
+                    tl.set("[data-loading-modal]", { visibility: "hidden" })
 
-                    if (!e.detail.keepModalOpen) {
+                    if (!e.detail || e.detail.keepModalOpen === false) {
+                        tl.to("#modal-wrapper", { opacity: 0 }, "<")
                         tl.set("#modal-wrapper", { visibility: "hidden" })
+                        return;
                     }
 
                     let nextTween = e.detail.nextTween
                     if (nextTween) {
-                        nextTween.restart()
+                        nextTween.resume()
                     }
                 })
             })
