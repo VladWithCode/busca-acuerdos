@@ -1,31 +1,51 @@
-{{define "style"}}
-
-{{end}}
 {{define "content"}}
 <main class="page bg-stone-50 p-4" x-data="{ addModalActive: false }">
     <h1 class="text-primary-900 text-2xl">Listado</h1>
     <div class="py-2"></div>
     <div class="flex gap-2 items-center">
-        <button class="bg-primary-800 text-stone-50 rounded text-sm p-2" @click="addModalActive = !addModalActive">Nuevo Expediente</button>
+        <button class="bg-primary-800 text-stone-50 rounded text-sm p-2" @click="openAddModal">Nuevo Expediente</button>
         <!-- <button class="bg-primary-800 text-stone-50 rounded text-sm p-2">Generar Reporte</button> -->
         <button class="bg-primary-800 text-stone-50 rounded text-sm p-2 ml-auto">Buscar</button>
     </div>
     <div class="py-2"></div>
-    <div class="grid grid-cols-1 auto-rows-fr text-primary-900 overflow-x-hidden">
-        
-    </div>
-    {{template "alert-cards" .}}
+    {{template "alert-cards" .Alerts}}
     <div class="py-2"></div>
     {{template "add-alert-modal"}}
+
+    <script>
+        function openAddModal() {
+            const tl = gsap.timeline({ duration: .3, ease: "power2.inOut" })
+
+            tl.to("[data-add-alert-wrapper]", { visibility: "visible", duration: 0 })
+            tl.to("[data-add-alert-wrapper]", { opacity: 1 })
+            tl.to("[data-add-alert-form]", { scale: 1 }, "<.1")
+        }
+
+        function closeAddModal() {
+            const tl = gsap.timeline({ duration: .3, ease: "power2.inOut" })
+
+            // tl.to("[data-add-alert-wrapper]", { display: "none", duration: 0 })
+            tl.to("[data-add-alert-wrapper]", { opacity: 0, duration: .1 })
+            tl.to("[data-add-alert-form]", { scale: 0 }, "<")
+            tl.to("[data-add-alert-wrapper]", { visibility: "hidden", duration: 0 })
+        }
+
+        document.body.addEventListener("htmx:afterRequest", () => {
+            closeAddModal()
+        })
+    </script>
 </main>
 {{end}}
 {{define "add-alert-modal"}}
-<div class="absolute w-96 max-w-[95%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40">
-    <div class="absolute w-screen h-screen top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary-900 bg-opacity-40"></div>
-    <form hx-post="/api/alerts" hx-target="#alert-listing" hx-swap="beforeend" class="relative z-10 bg-stone-50 shadow-sm shadow-accent-500 rounded p-2 space-y-4" @mousedown.outside="addModalActive = false">
+<div class="fixed w-96 max-w-[95%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 invisible opacity-0" data-add-alert-wrapper="">
+    <div
+        class="absolute w-screen h-screen top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary-900 bg-opacity-40"
+        data-add-alert-backdrop="" 
+        @click="closeAddModal"></div>
+    <form hx-post="/api/alerts" hx-target="[data-alert-listing]" hx-swap="beforeend" class="relative z-10 bg-stone-50 shadow-sm shadow-accent-500 rounded p-2 space-y-4 scale-0" data-add-alert-form="">
         <div class="flex items-center justify-between text-primary-800">
             <h2 class="text-lg font-semibold">Agregar alerta</h2>
-            <button type="button" @click="addModalActive = false">
+            <button type="button" @click="closeAddModal">
                 <svg class="w-5 h-5 fill-current">
                     <use href="/svg/close-circle.svg#delete"></use>
                 </svg>

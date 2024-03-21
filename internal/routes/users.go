@@ -30,16 +30,13 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 
-	alerts, err := db.FindAlertsByUser(auth.Id)
+	alerts, err := db.FindAlertsByUser(auth.Id, false)
 
 	if err != nil {
 		fmt.Printf("[Alert Find Err]: %v\n", err)
 	}
 
 	templ, err := template.New("layout.html").Funcs(template.FuncMap{
-		"GetNature": func(nc string) string {
-			return internal.CodesMap[nc]
-		},
 		"FormatDate": internal.FormatDate,
 	}).ParseFiles("web/templates/layout.html", "web/templates/alert-card.html", "web/templates/dashboard.html")
 
@@ -51,7 +48,7 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 
 	data := struct {
 		User   *db.User
-		Alerts *[]db.Alert
+		Alerts []*db.Alert
 	}{
 		User:   user,
 		Alerts: alerts,

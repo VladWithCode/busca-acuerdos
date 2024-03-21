@@ -1,0 +1,61 @@
+{{define "content"}}
+<main class="page bg-stone-50 p-4 text-primary-800" x-init="">
+    <h1 class="text-primary-900 text-2xl">Alerta: {{.Alert.CaseId}} - {{GetNature .Alert.NatureCode}}</h1>
+    <div class="py-2"></div>
+    <div class="flex gap-2 items-center">
+        <button 
+            class="bg-primary-800 text-stone-50 rounded text-sm p-2 hover:scale-[1.01] active:scale-95" 
+            hx-target="#modal-wrapper"
+            data-update-alert-btn="">
+            Actualizar Acuerdo
+        </button>
+        <button 
+            class="bg-red-600 text-stone-50 rounded text-sm p-2 ml-auto hover:scale-[1.01] active:scale-95" 
+            hx-delete="/api/alert/{{.Alert.Id}}"
+            hx-target="#modal-wrapper"
+            hx-swap="beforeend"
+            data-delete-alert-btn="">
+            Eliminar
+        </button>
+        <!-- <button class="bg-primary-800 text-stone-50 rounded text-sm p-2">Generar Reporte</button> -->
+    </div>
+    <div class="py-2"></div>
+    <div id="alert-data">
+        <div class="bg-stone-100 shadow shadow-stone-300 rounded py-2 px-4 space-y-1">
+            <h2 class="text-lg font-medium">Detalles</h2>
+            <p><span class="font-medium">Juzgado:</span> {{GetNature .Alert.NatureCode}}</p>
+            <p><span class="font-medium">Expediente:</span> {{.Alert.CaseId}}</p>
+            <p><span class="font-medium">Creada en:</span> {{FormatDate .Alert.CreatedAt}}</p>
+            <p><span class="font-medium">Actualizada en:</span> {{FormatDate .Alert.LastUpdatedAt}}</p>
+        </div>
+        <div class="py-2"></div>
+        <div class="bg-stone-100 shadow shadow-stone-300 rounded py-2 px-4 space-y-1">
+            <h2 class="text-lg font-medium">Información</h2>
+            <p><span class="font-medium">{{.Alert.Nature}}</span> {{.Alert.LastAccord.String}}</p>
+        </div>
+    </div>
+</main>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelector("[data-delete-alert-btn]").addEventListener("click", () => {
+            const startLoadEvt = new CustomEvent("custom:start-loading")
+            document.body.dispatchEvent(startLoadEvt)
+        })
+        document.body.addEventListener("htmx:beforeSwap", e => {
+            const tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
+            tl.pause()
+            const finishLoadEvt = new CustomEvent("custom:finish-loading", { detail: { nextTween: tl, keepModalOpen: true } })    
+
+            tl.set("[data-confirm-modal]", { scale: 0 })
+            tl.set("#modal-wrapper", { visibility: 'visible' }, "<")
+            tl.to("#modal-wrapper", { opacity: 1 })
+            tl.to("[data-confirm-modal-card]", { scale: 1 }, "<")
+
+            document.body.dispatchEvent(finishLoadEvt)
+        })
+        document.body.addEventListener("modal:confirm", e => {
+            window.location.replace("/dashboard")
+        })
+    })
+</script>
+{{end}}

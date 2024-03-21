@@ -1,12 +1,17 @@
 package routes
 
 import (
+	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/julienschmidt/httprouter"
+	"github.com/vladwithcode/juzgados/internal"
 	"github.com/vladwithcode/juzgados/internal/alerts"
 	"github.com/vladwithcode/juzgados/internal/auth"
 	"github.com/vladwithcode/juzgados/internal/db"
@@ -14,11 +19,15 @@ import (
 )
 
 func RegisterAlertRoutes(router *httprouter.Router) {
+	router.GET("/alerta/:id", auth.WithAuthMiddleware(RenderSingleAlertPage))
+
 	router.GET("/api/alerts/all", TestAllAlerts)
 	router.POST("/api/alerts", auth.WithAuthMiddleware(CreateAlert))
 
 	router.GET("/api/alerts/report/:userId", GetReportForUser)
 	router.POST("/api/alerts/report/:userId", CreatePDFForReport)
+	router.PUT("/api/alerts", auth.WithAuthMiddleware(UpdateAlertsForUser))
+	router.DELETE("/api/alert/:id", auth.WithAuthMiddleware(DeleteAlertById))
 }
 
 func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
@@ -30,15 +39,30 @@ func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, au
 		return
 	}
 
-	fmt.Printf("r.Form: %+v\n", r.Form)
-
 	var (
 		caseId     string = r.Form.Get("caseId")
 		natureCode string = r.Form.Get("natureCode")
 		userId     string = auth.Id
 	)
 
-	alert, err := db.CreateAlert(userId, caseId, natureCode)
+	doc, _ := tsj.GetCaseData(caseId, natureCode, nil, tsj.EXTENDED_DAYS_BACK)
+	alert := db.Alert{
+		UserId:        userId,
+		CaseId:        caseId,
+		NatureCode:    natureCode,
+		LastCheckedAt: time.Now(),
+		LastUpdatedAt: time.Now(),
+		Active:        true,
+	}
+
+	if doc != nil {
+		alert.LastAccord.String = doc.Accord
+		alert.LastAccord.Valid = true
+		alert.LastAccordDate.Time = doc.AccordDate
+		alert.LastAccordDate.Valid = true
+	}
+
+	_, err = db.CreateAlertWithData(&alert)
 
 	if err != nil {
 		fmt.Printf("[Create Err]: %v\n", err)
@@ -46,7 +70,208 @@ func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, au
 		return
 	}
 
-	respondWithJSON(w, 201, alert)
+	templ, err := template.New("alert-card.html").Funcs(template.FuncMap{
+		"FormatDate": internal.FormatDate,
+	}).ParseFiles("web/templates/alert-card.html")
+
+	if err != nil {
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	err = templ.ExecuteTemplate(w, "alert-card", alert)
+
+	if err != nil {
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+}
+
+func RenderSingleAlertPage(w http.ResponseWriter, r *http.Request, ps httprouter.Params, auth *auth.Auth) {
+	id := ps.ByName("id")
+	user, err := db.GetUserById(auth.Id)
+
+	if err != nil {
+		fmt.Printf("[Find user err]: %v\n", err)
+		w.Header().Add("Content-Type", "text/html")
+		w.WriteHeader(500)
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	alert, err := db.FindAlertById(id)
+
+	if err != nil {
+		fmt.Printf("[Find alert err]: %v\n", err)
+		w.Header().Add("Content-Type", "text/html")
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.WriteHeader(404)
+			msg := fmt.Sprintf("<p>No se encontró alerta con id: %v</p>", id)
+			w.Write([]byte(msg))
+		}
+		w.WriteHeader(500)
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	if alert.UserId != user.Id {
+		fmt.Printf("Alert ID: %v;   User ID: %v\n", alert.UserId, user.Id)
+		w.Header().Add("Content-Type", "text/html")
+		w.WriteHeader(403)
+		w.Write([]byte("<p>La alerta solicitada no pertenece al usuario actual</p>"))
+		return
+	}
+
+	templ, err := template.New("layout.html").Funcs(template.FuncMap{
+		"FormatDate": internal.FormatDate,
+		"GetNature": func(code string) string {
+			return internal.CodesMap[code]
+		},
+	}).ParseFiles("web/templates/layout.html", "web/templates/alerts/single-alert.html")
+
+	if err != nil {
+		fmt.Printf("[Parse err]: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	data := map[string]any{
+		"User":  user,
+		"Alert": alert,
+	}
+
+	err = templ.Execute(w, data)
+
+	if err != nil {
+		fmt.Printf("[Execute err]: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+}
+
+func UpdateAlertsForUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
+	alerts, err := db.FindAlertsByUser(auth.Id, true)
+	if err != nil {
+		fmt.Printf("[Find err]: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	caseKeys := []string{}
+	alertMap := make(map[string]*db.Alert)
+	for _, alert := range alerts {
+		cK := alert.CaseId + "+" + alert.NatureCode
+		caseKeys = append(caseKeys, cK)
+		alertMap[cK] = alert
+	}
+
+	docs, err := tsj.GetCasesData(caseKeys, tsj.EXTENDED_DAYS_BACK)
+
+	if err != nil {
+		fmt.Printf("[GetCasesData err]: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	for _, doc := range docs.Docs {
+		cK := doc.Case + "+" + doc.NatureCode
+		alert := alertMap[cK]
+		alert.LastAccord.String = doc.Accord
+		alert.LastAccord.Valid = true
+		alert.LastAccordDate.Time = doc.AccordDate
+		alert.LastAccordDate.Valid = true
+		alert.Nature = doc.Nature
+	}
+
+	err = db.UpdateAlertAccords(alerts)
+
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	templ, err := template.New("alert-card.html").Funcs(template.FuncMap{
+		"FormatDate": internal.FormatDate,
+	}).ParseFiles("web/templates/alert-card.html")
+
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	err = templ.ExecuteTemplate(w, "alert-cards", alerts)
+
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+}
+
+func DeleteAlertById(w http.ResponseWriter, r *http.Request, ps httprouter.Params, auth *auth.Auth) {
+	id := ps.ByName("id")
+	err := db.DeleteUserAlertById(id, auth.Id)
+
+	if err != nil {
+		fmt.Printf("[Find alert err]: %v\n", err)
+		w.Header().Add("Content-Type", "text/html")
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.WriteHeader(404)
+			msg := fmt.Sprintf("<p>No se encontró alerta con id: %v</p>", id)
+			w.Write([]byte(msg))
+		}
+
+		w.WriteHeader(500)
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	templ, err := template.New("blocks.html").ParseFiles("web/templates/blocks.html")
+
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		w.Header().Add("Content-Type", "text/html")
+		w.WriteHeader(500)
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	data := map[string]any{
+		"Message":     "Se eliminó con exito la alerta especificada",
+		"ErrorCode":   0,
+		"ButtonLabel": "",
+	}
+	err = templ.ExecuteTemplate(w, "success-card", data)
+
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		w.Header().Add("Content-Type", "text/html")
+		w.WriteHeader(500)
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
 }
 
 // subscriberMeta is a struct holding a pointer to the subscriber User

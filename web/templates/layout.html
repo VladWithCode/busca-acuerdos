@@ -41,7 +41,8 @@
                     })
                 }
             })
-        </script> {{end}}
+        </script>
+        {{end}}
 
         {{block "style" .}}
         <style></style>
@@ -49,7 +50,7 @@
 	</head>
 	<body class="text-primary-900 overflow-x-hidden overflow-y-auto">
 		{{block "header" .}}
-        <div class="container bg-stone-50 py-4 px-5 flex justify-between mx-auto" x-data="">
+        <div class="bg-stone-50 py-4 px-5 flex justify-between mx-auto" x-data="">
             <h2 class="text-xl font-medium">TSJ Search</h2>
             <nav class="hidden space-x-4">
                 <a class="font-medium text-lg" href="/">Inicio</a>
@@ -103,5 +104,47 @@
         {{block "footer" .}}
 		<footer class="max-w-full bg-primary-900 text-stone-50 hidden">footer</footer>
 		{{end}}
+
+        {{block "modal-wrapper" .}}
+        <div id="modal-wrapper" class="left-0 top-0 z-50 invisible opacity-0">
+            <div
+                id="modal-loading-card" 
+                class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50 opacity-0" 
+                x-data="" 
+                x-ref="loadingModal" 
+                data-loading-modal=""
+                hx-preserve>
+                <div class="flex flex-col items-center justify-center w-4/5 aspect-square max-w-screen-md m-auto gap-6 scale-0" data-loading-modal-card="">
+                    <div class="w-28 h-28 rounded-full border-transparent border-8 border-l-primary-700 origin-center animate-spin" data-loading-spinner=""></div>
+                    <p class="text-xl font-bold text-stone-50">Cargando...</p>
+                </div>
+            </div>
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                document.body.addEventListener("custom:start-loading", e => {
+                    let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
+                    tl.set("#modal-wrapper", { visibility: "visible" })
+                    tl.to("#modal-wrapper", { opacity: 1 })
+                    tl.to("[data-loading-modal]", { opacity: 1 }, "<")
+                    tl.to("[data-loading-modal-card]", { scale: 1 }, "<")
+                })
+                document.body.addEventListener("custom:finish-loading", e => {
+                    let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
+                    tl.to("[data-loading-modal-card]", { scale: 0 })
+                    tl.set("[data-loading-modal]", { opacity: 0 }, "<")
+
+                    if (!e.detail.keepModalOpen) {
+                        tl.set("#modal-wrapper", { visibility: "hidden" })
+                    }
+
+                    let nextTween = e.detail.nextTween
+                    if (nextTween) {
+                        nextTween.restart()
+                    }
+                })
+            })
+        </script>
+        {{end}}
 	</body>
 </html>

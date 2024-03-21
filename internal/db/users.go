@@ -72,12 +72,13 @@ func CreateUser(id, name, lastname, username, email, phone, password string, sub
 
 func GetUserById(id string) (*User, error) {
 	conn, err := GetPool()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
 	if err != nil {
 		return nil, err
 	}
+	defer conn.Release()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	var user User
 
@@ -106,13 +107,13 @@ func GetUserById(id string) (*User, error) {
 
 func GetUserByUsername(username string) (*User, error) {
 	conn, err := GetPool()
-	defer conn.Release()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
 	if err != nil {
 		return nil, err
 	}
+	defer conn.Release()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	var user User
 

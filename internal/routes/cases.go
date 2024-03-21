@@ -31,17 +31,23 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	doc, err := tsj.GetCaseData(caseID, caseType, &d, tsj.DEFAULT_DAYS_BACK)
 
+	if err != nil {
+		fmt.Println(err)
+		respondWithError(w, 500, "Ocurrió un error inesperado")
+		return
+	}
+
 	rowTempl, err := template.New("case-card.html").Funcs(template.FuncMap{
 		"FormatDate": internal.FormatDate,
 	}).ParseFiles("web/templates/case-card.html")
 
 	if err != nil {
 		fmt.Println(err)
-		respondWithError(w, 500, "Couldn't parse row")
+		respondWithError(w, 500, "Ocurrió un error inesperado")
 		return
 	}
 
-	rowTempl.Execute(w, []db.Doc{*doc})
+	rowTempl.ExecuteTemplate(w, "case-card", doc)
 }
 
 func searchCases(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
