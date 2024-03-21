@@ -14,7 +14,7 @@
 
     <script>
         function openAddModal() {
-            const tl = gsap.timeline({ duration: .3, ease: "power2.inOut" })
+            const tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
 
             tl.to("[data-add-alert-wrapper]", { visibility: "visible", duration: 0 })
             tl.to("[data-add-alert-wrapper]", { opacity: 1 })
@@ -22,16 +22,48 @@
         }
 
         function closeAddModal() {
-            const tl = gsap.timeline({ duration: .3, ease: "power2.inOut" })
+            const tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
 
-            // tl.to("[data-add-alert-wrapper]", { display: "none", duration: 0 })
-            tl.to("[data-add-alert-wrapper]", { opacity: 0, duration: .1 })
+            tl.to("[data-add-alert-wrapper]", { opacity: 0 })
             tl.to("[data-add-alert-form]", { scale: 0 }, "<")
-            tl.to("[data-add-alert-wrapper]", { visibility: "hidden", duration: 0 })
+            tl.set("[data-add-alert-wrapper]", { visibility: "hidden" })
         }
 
-        document.body.addEventListener("htmx:afterRequest", () => {
+        document.querySelector("[data-add-alert-submit-btn]").addEventListener("click", () => {
+            const startLoadEvt = new CustomEvent("custom:start-loading")
             closeAddModal()
+            document.body.dispatchEvent(startLoadEvt)
+        })
+        // Handle request error
+        function handleRequestError(e) {
+            e.preventDefault()
+            const finishLoadEvt = new CustomEvent("custom:finish-loading", { detail: { keepModalOpen: true } })
+            document.body.dispatchEvent(finishLoadEvt)
+
+            document
+                .querySelector("#modal-wrapper")
+                .insertAdjacentHTML("beforeend", createErrorModal())
+
+            let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
+            tl.to("[data-confirm-modal]", { opacity: 1 })
+            tl.to("[data-confirm-modal-card]", { scale: 1 }, "<")
+        }
+        document.body.addEventListener("htmx:afterRequest", e => {
+            if (e.detail.xhr.status >= 400 || e.detail.xhr.status < 200) {
+                return handleRequestError(e)
+            }
+
+            // Handle successfull request
+            const finishLoadEvt = new CustomEvent("custom:finish-loading", { detail: { keepModalOpen: true } })
+            document.body.dispatchEvent(finishLoadEvt)
+
+            document
+                .querySelector("#modal-wrapper")
+                .insertAdjacentHTML("beforeend", createSuccessModal({ message: "Alerta creada con exito" }))
+
+            let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
+            tl.to("[data-confirm-modal]", { opacity: 1 })
+            tl.to("[data-confirm-modal-card]", { scale: 1 }, "<")
         })
     </script>
 </main>
@@ -82,7 +114,7 @@
                 </select>
             </div>
         </div>
-        <button type="submit" class="w-full rounded p-2 text-stone-50 bg-primary-800">Agregar</button>
+        <button type="submit" class="w-full rounded p-2 text-stone-50 bg-primary-800" data-add-alert-submit-btn="">Agregar</button>
     </form>
 </div>
 {{end}}
