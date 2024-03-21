@@ -41,15 +41,21 @@
             const startLoadEvt = new CustomEvent("custom:start-loading")
             document.body.dispatchEvent(startLoadEvt)
         })
-        document.body.addEventListener("htmx:beforeSwap", e => {
+        document.body.addEventListener("htmx:afterRequest", e => {
+            const status = e.detail.xhr.status
+            if (!status || status < 200 || status >= 400) {
+                console.log(e.detail.xhr)
+                return
+            }
+
             const tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
+            tl.set("#modal-wrapper", { visibility: 'visible' }, "<")
             tl.pause()
             const finishLoadEvt = new CustomEvent("custom:finish-loading", { detail: { nextTween: tl, keepModalOpen: true } })    
 
-            tl.set("[data-confirm-modal]", { scale: 0 })
-            tl.set("#modal-wrapper", { visibility: 'visible' }, "<")
             tl.to("#modal-wrapper", { opacity: 1 })
-            tl.to("[data-confirm-modal-card]", { scale: 1 }, "<")
+            tl.fromTo("[data-confirm-modal]", { opacity: 0 }, { opacity: 1 }, "<")
+            tl.fromTo("[data-confirm-modal-card]", { scale: 0 }, { scale: 1 }, "<")
 
             document.body.dispatchEvent(finishLoadEvt)
         })
