@@ -8,7 +8,7 @@
 
 {{define "content"}}
 <div 
-    class="page container md:px-8 mx-auto overflow-x-hidden bg-stone-50 text-primary-900"
+    class="page md:px-8 mx-auto overflow-x-hidden bg-stone-50 text-primary-900"
     x-data="{
             cases: [],
             id: '',
@@ -49,7 +49,6 @@
         class="col-start-1 row-start-1"
         hx-get="/api/cases"
         hx-target="[data-result-list]"
-
         data-form="search">
         <div class="flex w-full px-2 text-sm gap-x-1">
             <select name="type" id="type" class="w-24 flex-auto font-medium bg-stone-300 text-primary-900 rounded pl-2 py-[8px] break-words text-ellipsis focus:outline-accent-800" x-ref="typeSel" x-model="type">
@@ -93,12 +92,12 @@
                 cases.push({
                 id: id,
                 type: type,
-                delFlag: id + '-' + type,
+                delFlag: id + '+' + type,
                 label: label
                 })
 
                 gsap.delayedCall(0, () => {
-                    gsap.to('[data-case=\'' + id + '-' + type + '\']', { y: 0, opacity: 1, duration: .3 })
+                    gsap.to('[data-case=\'' + id + '+' + type + '\']', { y: 0, opacity: 1, duration: .3 })
                     id = ''
                 })
                 
