@@ -1,0 +1,85 @@
+{{define "success-card"}}
+<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50" data-confirm-modal="success" data-confirm-modal-code="{{.ErrorCode}}" x-data="{}" x-ref="confirmModal">
+    <div class="w-4/5 max-w-screen-md bg-stone-100 rounded p-2 shadow shadow-stone-300 m-auto space-y-3" data-confirm-modal-card="">
+        <div class="h-32 w-32 mx-auto">
+            <svg class="w-full h-full fill-emerald-500">
+                <use href="/svg/success.svg#success"></use>
+            </svg>
+        </div>
+        <p class="mx-auto">
+            {{if ne .Message ""}}
+            {{.Message}}
+            {{else}}
+            ¡Operación exitosa!
+            {{end}}
+        </p>
+        <button 
+            class="w-full py-2 bg-primary-800 text-stone-50 rounded hover:scale-[1.01] active:scale-95 transition"
+            @click="
+                $event.preventDefault()
+                const confirmEvt = new Event('modal:confirm')
+                const tl = gsap.timeline({ duration: .3, ease: 'power2.inOut' })
+
+                tl.to('#modal-wrapper', { opacity: 0 })
+                tl.to('[data-confirm-modal-card]', { scale: 0 }, '<')
+                tl.to('#modal-wrapper', { visibility: 'hidden' })
+                gsap.delayedCall(1, function() {
+                    document.body.dispatchEvent(confirmEvt)
+                    $refs.confirmModal.remove()
+                })
+            ">
+            {{if ne .ButtonLabel ""}}
+            {{.ButtonLabel}}
+            {{else}}
+            Continuar
+            {{end}}
+        </button>
+    </div>
+</div>
+{{end}}
+
+{{define "error-card"}}
+<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50" data-confirm-modal="error" data-confirm-modal-code="{{.ErrorCode}}" x-data="" x-ref="confirmModal">
+    <div class="w-4/5 max-w-screen-md bg-stone-100 rounded p-2 shadow shadow-stone-300 m-auto space-y-3" data-confirm-modal-card="">
+        <div class="h-32 w-32 mx-auto">
+            <svg class="h-full w-full fill-secondary-500">
+                <use href="/svg/close-circle.svg#delete"></use>
+            </svg>
+        </div>
+        {{if ne .Message ""}}
+        <p class="w-[24ch] mx-auto">{{.Message}}</p>
+        {{else}}
+        <p class="w-[24ch] mx-auto">Ocurrió un error</p>
+        {{end}}
+        <button 
+            class="w-full py-2 bg-primary-800 text-stone-50 rounded hover:scale-[1.01] active:scale-95 transition"
+            @click="
+                $event.preventDefault()
+                const confirmEvt = new Event(
+                    'modal:confirm',
+                    { 
+                        detail: {
+                            type: $refs.confirmModal.dataset.confirmModal,
+                            errorCode: $refs.confirmModal.dataset.confirmModalCode,
+                        }
+                    }
+                )
+                const tl = gsap.timeline({ duration: .2, ease: 'power2.inOut' })
+
+                tl.to('[data-confirm-modal]', { opacity: 0 })
+                tl.to('[data-confirm-modal-card]', { scale: 0 }, '<')
+                tl.to('[data-confirm-modal]', { visibility: 'hidden' })
+                tl.delayedCall(.3, function() {
+                    document.body.dispatchEvent(confirmEvt)
+                    $refs.confirmModal.remove()
+                })
+            ">
+            {{if ne .ButtonLabel ""}}
+            {{.ButtonLabel}}
+            {{else}}
+            Continuar
+            {{end}}
+        </button>
+    </div>
+</div>
+{{end}}
