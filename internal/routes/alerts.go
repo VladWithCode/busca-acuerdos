@@ -60,6 +60,7 @@ func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, au
 		alert.LastAccord.Valid = true
 		alert.LastAccordDate.Time = doc.AccordDate
 		alert.LastAccordDate.Valid = true
+		alert.Nature = doc.Nature
 	}
 
 	_, err = db.CreateAlertWithData(&alert)
