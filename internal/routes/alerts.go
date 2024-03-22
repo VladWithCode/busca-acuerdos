@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/julienschmidt/httprouter"
 	"github.com/vladwithcode/juzgados/internal"
 	"github.com/vladwithcode/juzgados/internal/alerts"
@@ -66,6 +67,11 @@ func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, au
 	_, err = db.CreateAlertWithData(&alert)
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			respondWithError(w, 400, "Ya existe una alerta para este caso en tu perfil")
+			return
+		}
 		fmt.Printf("[Create Err]: %v\n", err)
 		respondWithError(w, 500, "Ocurrió un error al crear la alerta")
 		return

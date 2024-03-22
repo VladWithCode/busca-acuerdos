@@ -40,9 +40,11 @@
             const finishLoadEvt = new CustomEvent("custom:finish-loading", { detail: { keepModalOpen: true } })
             document.body.dispatchEvent(finishLoadEvt)
 
+            let message = JSON.parse(e.detail.xhr.response).error
+
             document
                 .querySelector("#modal-wrapper")
-                .insertAdjacentHTML("beforeend", createErrorModal())
+                .insertAdjacentHTML("beforeend", createErrorModal({ message }))
 
             let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
             tl.to("[data-confirm-modal]", { opacity: 1 })

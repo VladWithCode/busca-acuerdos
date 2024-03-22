@@ -215,9 +215,9 @@ func CreateAlertWithData(data *Alert) (*Alert, error) {
 		return nil, err
 	}
 
-	_, err = conn.Query(
+	t, err := conn.Exec(
 		ctx,
-		"INSERT INTO alerts (id, user_id, case_id, nature_code, active, last_accord, last_accord_date, alias, nature) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+		"INSERT INTO alerts (id, user_id, case_id, nature_code, active, last_accord, last_accord_date, alias, nature) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
 		id,
 		data.UserId,
 		data.CaseId,
@@ -231,6 +231,10 @@ func CreateAlertWithData(data *Alert) (*Alert, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if t.RowsAffected() == 0 {
+		return nil, errors.New("No se creó la alerta")
 	}
 
 	data.Id = id.String()
