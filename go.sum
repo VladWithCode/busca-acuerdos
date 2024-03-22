@@ -1,3 +1,5 @@
+github.com/conekta/conekta-go v0.0.0-20231221200751-2818ace2352a h1:h1pmmxZNcHtm+qwniKZTNkJW85vbVIy0YLvdHBOxhYk=
+github.com/conekta/conekta-go v0.0.0-20231221200751-2818ace2352a/go.mod h1:UE0XjZF2xA2sm4X5BUCsKXHH4f8Y+UGlsu6KCTiMjlM=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

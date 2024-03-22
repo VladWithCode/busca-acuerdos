@@ -3,6 +3,7 @@ module github.com/vladwithcode/juzgados
 go 1.21.5
 
 require (
+	github.com/conekta/conekta-go v0.0.0-20231221200751-2818ace2352a
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.5.1
