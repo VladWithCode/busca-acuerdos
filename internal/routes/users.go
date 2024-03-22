@@ -16,14 +16,14 @@ import (
 )
 
 func RegisterUserRoutes(router *httprouter.Router) {
-	router.GET("/dashboard", auth.WithAuthMiddleware(dashboardHandler))
-	router.GET("/iniciar-sesion", auth.CheckAuthMiddleware(SignInHandler))
+	router.GET("/dashboard", auth.WithAuthMiddleware(RenderDashboard))
+	router.GET("/iniciar-sesion", auth.CheckAuthMiddleware(RenderSignin))
 	router.GET("/sign-out", auth.CheckAuthMiddleware(SignOutUser))
 	router.POST("/sign-in", SignInUser)
 	router.POST("/user", CreateUser)
 }
 
-func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
+func RenderDashboard(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
 	user, err := db.GetUserByUsername(auth.Username)
 
 	if err != nil {
@@ -68,7 +68,7 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 }
 
-func SignInHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
+func RenderSignin(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
 	if auth.Id != "" {
 		http.Redirect(w, r, "/dashboard", 302)
 		return
@@ -79,6 +79,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, 
 	if err != nil {
 		fmt.Println(err)
 		respondWithError(w, 500, "Server Error")
+		return
 	}
 
 	data := map[string]any{
