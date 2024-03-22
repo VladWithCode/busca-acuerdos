@@ -20,15 +20,15 @@ const (
 	ACCORD_LEN = 49
 )
 
-const DEFAULT_DAYS_BACK = 31
-const EXTENDED_DAYS_BACK = 90
+const DEFAULT_DAYS_BACK = 62
+const EXTENDED_DAYS_BACK = 93
 
 type NotFoundError struct {
-	Message string
+	Msg string
 }
 
-func (e NotFoundError) Error() string {
-	return fmt.Sprintf("[NotFound error] %s\n", e.Message)
+func (e *NotFoundError) Error() string {
+	return e.Msg
 }
 
 type GetCasesResult struct {
@@ -142,8 +142,8 @@ func FetchAndReadDoc(caseId, searchDate, caseType string) ([]byte, error) {
 	idx := searchExp.FindIndex(*pdfContent)
 
 	if len(idx) == 0 {
-		err := NotFoundError{
-			Message: "No se encontró información sobre el caso solicitado",
+		err := &NotFoundError{
+			Msg: "No se encontró información sobre el caso solicitado",
 		}
 
 		return nil, err
