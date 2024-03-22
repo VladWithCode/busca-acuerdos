@@ -1,6 +1,15 @@
 {{define "content"}}
 <main class="page bg-stone-50 p-4 text-primary-800" x-init="">
-    <h1 class="text-primary-900 text-2xl">Alerta: {{.Alert.CaseId}} - {{GetNature .Alert.NatureCode}}</h1>
+    <div class="flex gap-6">
+        <div class="flex-initial my-auto">
+            <a href="/dashboard" class="flex items-center justify-center rounded-full text-stone-50 bg-primary-800 p-3 pr-4">
+                <svg class="h-6 w-6 stroke-current rotate-180">
+                    <use href="/svg/arrow.svg#arrow"></use>
+                </svg>
+            </a>
+        </div>
+        <h1 class="flex-1 text-primary-900 text-2xl">Alerta: {{.Alert.CaseId}} - {{GetNature .Alert.NatureCode}}</h1>
+    </div>
     <div class="py-2"></div>
     <div class="flex gap-2 items-center">
         <button 
