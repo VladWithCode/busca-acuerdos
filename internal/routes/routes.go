@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/vladwithcode/juzgados/internal/auth"
 	"github.com/vladwithcode/juzgados/internal/reader"
 )
 
@@ -17,7 +18,7 @@ func NewRouter() http.Handler {
 	router := httprouter.New()
 
 	// Static Routes
-	router.GET("/", indexHandler)
+	router.GET("/", auth.CheckAuthMiddleware(indexHandler))
 
 	// API Routes
 	router.GET("/api/file", getFile)
@@ -39,7 +40,7 @@ func NewRouter() http.Handler {
 	return router
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
 	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/index.html")
 
 	if err != nil {
@@ -47,7 +48,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		respondWithError(w, 500, "Server Error")
 	}
 
-	templ.Execute(w, nil)
+	data := map[string]any{
+		"User": auth,
+	}
+
+	templ.Execute(w, data)
 }
 
 func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
