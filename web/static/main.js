@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     document.body.addEventListener("htmx:afterRequest", () => {
-        const finishLoadEvt = CustomEvent("custom:", { detail: { keepModalOpen: true } }) 
+        const finishLoadEvt = CustomEvent("custom:finish-loading", { detail: { keepModalOpen: true } }) 
         document.body.dispatchEvent(finishLoadEvt)
     })
     document.body.addEventListener("htmx:beforeSwap", e => {
