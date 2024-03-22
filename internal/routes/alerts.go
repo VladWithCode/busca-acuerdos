@@ -29,6 +29,9 @@ func RegisterAlertRoutes(router *httprouter.Router) {
 	router.POST("/api/alerts/report/:userId", CreatePDFForReport)
 	router.PUT("/api/alerts", auth.WithAuthMiddleware(UpdateAlertsForUser))
 	router.DELETE("/api/alert/:id", auth.WithAuthMiddleware(DeleteAlertById))
+
+	// Update the accord data for the alert with the provided id
+	router.PUT("/api/alert-refresh/:id", auth.WithAuthMiddleware(RefreshAlertById))
 }
 
 func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
@@ -46,7 +49,7 @@ func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, au
 		userId     string = auth.Id
 	)
 
-	doc, _ := tsj.GetCaseData(caseId, natureCode, nil, tsj.EXTENDED_DAYS_BACK)
+	doc, _ := tsj.GetCaseData(caseId, natureCode, nil, tsj.DEFAULT_DAYS_BACK)
 	alert := db.Alert{
 		UserId:        userId,
 		CaseId:        caseId,
@@ -165,6 +168,111 @@ func RenderSingleAlertPage(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 }
 
+func RefreshAlertById(w http.ResponseWriter, r *http.Request, ps httprouter.Params, auth *auth.Auth) {
+	id := ps.ByName("id")
+	alert, err := db.FindAlertById(id)
+
+	// For htmx request to
+	w.Header().Add("HX-Reswap", "beforeend")
+
+	if err != nil {
+		fmt.Printf("[Find err]: %v\n", err)
+		w.WriteHeader(404)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>No se encontró la alerta especificada</p>"))
+		return
+	}
+
+	templ, err := template.New("blocks.html").ParseFiles("web/templates/blocks.html")
+
+	if err != nil {
+		fmt.Printf("[Parse template err]: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	doc, err := tsj.GetCaseData(alert.CaseId, alert.NatureCode, nil, tsj.DEFAULT_DAYS_BACK)
+
+	if err != nil {
+		var NotFoundErr *tsj.NotFoundError
+		if errors.As(err, &NotFoundErr) {
+			w.WriteHeader(404)
+			w.Header().Add("Content-Type", "text/html")
+
+			err = templ.ExecuteTemplate(w, "error-card", map[string]any{
+				"Message":   "No se encontró nueva información para este caso en los ultimos 30 días",
+				"BtnLabel":  "Aceptar",
+				"ErrorCode": 404,
+			})
+
+			if err == nil {
+				return
+			}
+		}
+
+		fmt.Printf("GetCaseData err: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		return
+	}
+
+	alert.Nature = doc.Nature
+	alert.LastAccord.String = doc.Accord
+	alert.LastAccord.Valid = doc.Accord != ""
+	alert.LastAccordDate.Time = doc.AccordDate
+	alert.LastAccordDate.Valid = doc.AccordDate != (time.Time{})
+
+	err = db.UpdateAlertAccord(auth.Id, alert.CaseId, alert.NatureCode, alert)
+
+	if err != nil {
+		fmt.Printf("UpdateAlert err: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+
+		err = templ.ExecuteTemplate(w, "error-card", map[string]any{
+			"Message":   "No se pudo actualizar la alerta",
+			"BtnLabel":  "Aceptar",
+			"ErrorCode": 500,
+		})
+
+		if err != nil {
+			fmt.Printf("Execute update err: %v\n", err)
+			w.Write([]byte("<p>Ocurrió un error inesperado</p>"))
+		}
+		return
+	}
+
+	templ, err = template.New("single-alert.html").Funcs(template.FuncMap{
+		"GetNature": func(code string) string {
+			return internal.CodesMap[code]
+		},
+		"FormatDate": internal.FormatDate,
+	}).ParseFiles("web/templates/alerts/single-alert.html")
+
+	if err != nil {
+		fmt.Printf("Parse Single err: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("Ocurrió un error inesperado"))
+		return
+	}
+
+	w.Header().Set("HX-Reswap", "innerHTML")
+	err = templ.ExecuteTemplate(w, "alert-data", map[string]any{
+		"Alert": alert,
+	})
+
+	if err != nil {
+		fmt.Printf("Execute alert-data err: %v\n", err)
+		w.WriteHeader(500)
+		w.Header().Add("Content-Type", "text/html")
+		w.Write([]byte("Ocurrió un error inesperado"))
+	}
+}
+
 func UpdateAlertsForUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
 	alerts, err := db.FindAlertsByUser(auth.Id, true)
 	if err != nil {
@@ -183,7 +291,7 @@ func UpdateAlertsForUser(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		alertMap[cK] = alert
 	}
 
-	docs, err := tsj.GetCasesData(caseKeys, tsj.EXTENDED_DAYS_BACK)
+	docs, err := tsj.GetCasesData(caseKeys, tsj.DEFAULT_DAYS_BACK)
 
 	if err != nil {
 		fmt.Printf("[GetCasesData err]: %v\n", err)
