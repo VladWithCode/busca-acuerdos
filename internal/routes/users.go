@@ -17,7 +17,8 @@ import (
 
 func RegisterUserRoutes(router *httprouter.Router) {
 	router.GET("/dashboard", auth.WithAuthMiddleware(dashboardHandler))
-	router.GET("/iniciar-sesion", SignInHandler)
+	router.GET("/iniciar-sesion", auth.CheckAuthMiddleware(SignInHandler))
+	router.GET("/sign-out", auth.CheckAuthMiddleware(SignOutUser))
 	router.POST("/sign-in", SignInUser)
 	router.POST("/user", CreateUser)
 }
@@ -67,7 +68,12 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 }
 
-func SignInHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func SignInHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
+	if auth.Id != "" {
+		http.Redirect(w, r, "/dashboard", 302)
+		return
+	}
+
 	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/sign-in.html")
 
 	if err != nil {
@@ -75,7 +81,11 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		respondWithError(w, 500, "Server Error")
 	}
 
-	templ.Execute(w, nil)
+	data := map[string]any{
+		"User": auth,
+	}
+
+	templ.Execute(w, data)
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -162,7 +172,7 @@ func SignInUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	jwtCookie := &http.Cookie{
 		Name:     "auth_token",
 		Value:    t,
-		Expires:  time.Now().Add(2 * time.Hour),
+		Expires:  time.Now().Add(6 * time.Hour),
 		HttpOnly: true,
 		//Secure:   true,
 		SameSite: http.SameSiteStrictMode,
@@ -171,5 +181,24 @@ func SignInUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	http.SetCookie(w, jwtCookie)
 	w.Header().Add("HX-Location", "/dashboard")
 
-	respondWithJSON(w, 200, user)
+	respondWithJSON(w, 204, user)
+}
+
+func SignOutUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
+	if auth.Id == "" {
+		http.Redirect(w, r, "/", 401)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		// Secure: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	w.Header().Add("HX-Location", "/")
+	http.Redirect(w, r, "/", 302)
 }
