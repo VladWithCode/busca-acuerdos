@@ -57,7 +57,7 @@
             class="w-full py-2 bg-primary-800 text-stone-50 rounded hover:scale-[1.01] active:scale-95 transition"
             @click="
                 $event.preventDefault()
-                const confirmEvt = new Event('modal:confirm')
+                const confirmEvt = new Event('modal:confirm', { detail: { isError: false } })
                 const tl = gsap.timeline({ duration: .3, ease: 'power2.inOut' })
 
                 tl.to('#modal-wrapper', { opacity: 0 })
@@ -88,7 +88,7 @@
             class="w-full py-2 bg-primary-800 text-stone-50 rounded hover:scale-[1.01] active:scale-95 transition"
             @click="
                 $event.preventDefault()
-                const confirmEvt = new Event('modal:confirm')
+                const confirmEvt = new Event('modal:confirm', { detail: { isError: true } })
                 const tl = gsap.timeline({ duration: .2, ease: 'power2.inOut' })
 
                 tl.to('[data-confirm-modal]', { opacity: 0 })
@@ -111,7 +111,7 @@
 	</head>
 	<body class="text-primary-900">
 		{{block "header" .}}
-        <div class="bg-stone-50 py-4 px-5 flex justify-between mx-auto" x-data="">
+        <header class="relative bg-stone-50 py-4 px-5 flex justify-between mx-auto" x-data="">
             <h2 class="text-xl font-medium">TSJ Search</h2>
             <nav class="hidden space-x-4">
                 <a class="font-medium text-lg" href="/">Inicio</a>
@@ -123,7 +123,7 @@
 
             <!-- Nav toggler -->
             <button 
-                class="ml-auto text-xs font-medium uppercase text-stone-50 bg-primary-900 px-2 rounded-full"
+                class="relative ml-auto text-xs font-medium uppercase text-stone-50 bg-primary-900 px-2 rounded-full"
                 @click="gsap.to('[data-mobile-menu]', { width: '100%', ease: 'power2.inOut', duration: .3 })"
                 data-menu-toggler="" >
                 menu
@@ -136,7 +136,7 @@
                 </div>
                 */}}
             </button>
-        </div>
+        </header>
 
         <!-- Mobile Navigation Menu -->
         <div class="fixed h-screen inset-0 text-primary-800 overflow-hidden z-50 w-0 md:hidden" data-mobile-menu="" x-data="">
@@ -153,8 +153,13 @@
                     <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="4"><a class="" href="/#contacto">Contacto</a> </li>
                 </ul>
                 <ul class="flex flex-initial justify-between mt-auto">
-                    <li class="px-2 py-1"><a href="/iniciar-sesion">Iniciar Sesion</a></li>
+                    {{with .User.Id}}
+                    <li class="px-2 py-1 underline underline-offset-2"><a href="/dashboard">Mi portal</a></li>
+                    <li class="px-2 py-1 underline underline-offset-2"><a href="/sign-out">Cerrar Sesion</a></li>
+                    {{else}}
+                    <li class="px-2 py-1 underline underline-offset-2"><a href="/iniciar-sesion">Iniciar Sesion</a></li>
                     <li class="px-2 py-1 bg-primary-900 text-stone-50 rounded"><a href="/registro">Registrarse</a></li>
+                    {{end}}
                 </ul>
             </div>
         </div>
@@ -186,23 +191,29 @@
         </div>
         <script>
             document.addEventListener("DOMContentLoaded", function() {
+                let isLoading = false
                 document.body.addEventListener("custom:start-loading", e => {
                     let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
                     tl.set("#modal-wrapper", { visibility: "visible" })
                     tl.to("#modal-wrapper", { opacity: 1 })
                     tl.to("[data-loading-modal]", { opacity: 1 }, "<")
                     tl.to("[data-loading-modal-card]", { scale: 1 }, "<")
+                    isLoading = true
                 })
                 document.body.addEventListener("custom:finish-loading", e => {
-                    let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
-                    tl.to("[data-loading-modal-card]", { scale: 0 })
-                    tl.to("[data-loading-modal]", { opacity: 0 }, "<")
-                    tl.set("[data-loading-modal]", { visibility: "hidden" })
+                    if (isLoading) {
+                        isLoading = false
 
-                    if (!e.detail || e.detail.keepModalOpen === false) {
-                        tl.to("#modal-wrapper", { opacity: 0 }, "<")
-                        tl.set("#modal-wrapper", { visibility: "hidden" })
-                        return;
+                        let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
+                        tl.to("[data-loading-modal-card]", { scale: 0 })
+                        tl.to("[data-loading-modal]", { opacity: 0 }, "<")
+                        tl.set("[data-loading-modal]", { visibility: "hidden" })
+
+                        if (!e.detail || e.detail.keepModalOpen === false) {
+                            tl.to("#modal-wrapper", { opacity: 0 }, "<")
+                            tl.set("#modal-wrapper", { visibility: "hidden" })
+                            return;
+                        }
                     }
 
                     let nextTween = e.detail.nextTween

@@ -7,8 +7,12 @@
             </svg>
         </div>
         <p class="mx-auto">
-            {{if ne .Message ""}}
-            {{.Message}}
+            {{with .Message}}
+                {{if ne . ""}}
+                {{.}}
+                {{else}}
+                ¡Operación exitosa!
+                {{end}}
             {{else}}
             ¡Operación exitosa!
             {{end}}
@@ -17,7 +21,7 @@
             class="w-full py-2 bg-primary-800 text-stone-50 rounded hover:scale-[1.01] active:scale-95 transition"
             @click="
                 $event.preventDefault()
-                const confirmEvt = new Event('modal:confirm')
+                const confirmEvt = new Event('modal:confirm', { detail: { isError: false } })
                 const tl = gsap.timeline({ duration: .3, ease: 'power2.inOut' })
 
                 tl.to('#modal-wrapper', { opacity: 0 })
@@ -28,8 +32,12 @@
                     $refs.confirmModal.remove()
                 })
             ">
-            {{if ne .ButtonLabel ""}}
-            {{.ButtonLabel}}
+            {{with .ButtonLabel}}
+                {{if ne . ""}}
+                {{.}}
+                {{else}}
+                Continuar
+                {{end}}
             {{else}}
             Continuar
             {{end}}
@@ -46,21 +54,28 @@
                 <use href="/svg/close-circle.svg#delete"></use>
             </svg>
         </div>
-        {{if ne .Message ""}}
-        <p class="w-[24ch] mx-auto">{{.Message}}</p>
-        {{else}}
-        <p class="w-[24ch] mx-auto">Ocurrió un error</p>
-        {{end}}
+        <p class="w-[24ch] mx-auto">
+            {{with .Message}}
+                {{if ne . ""}}
+                {{.}}
+                {{else}}
+                Ocurrió un error
+                {{end}}
+            {{else}}
+            Ocurrió un error
+            {{end}}
+        </p>
         <button 
             class="w-full py-2 bg-primary-800 text-stone-50 rounded hover:scale-[1.01] active:scale-95 transition"
             @click="
                 $event.preventDefault()
-                const confirmEvt = new Event(
+                const confirmEvt = new CustomEvent(
                     'modal:confirm',
                     { 
                         detail: {
                             type: $refs.confirmModal.dataset.confirmModal,
-                            errorCode: $refs.confirmModal.dataset.confirmModalCode,
+                            isError: true,
+                            code: {{.ErrorCode}},
                         }
                     }
                 )
@@ -74,8 +89,12 @@
                     $refs.confirmModal.remove()
                 })
             ">
-            {{if ne .ButtonLabel ""}}
-            {{.ButtonLabel}}
+            {{with .BtnLabel}}
+                {{if ne . ""}}
+                {{.}}
+                {{else}}
+                Ocurrió un error
+                {{end}}
             {{else}}
             Continuar
             {{end}}

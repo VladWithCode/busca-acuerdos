@@ -35,6 +35,10 @@ type Alert struct {
 	*/
 }
 
+func (a *Alert) GetCaseKey() string {
+	return a.CaseId + "+" + a.NatureCode
+}
+
 // type AutoReportAlerts map[string][]Alert
 type AutoReportAlert struct {
 	Id             string         `json:"id" db:"id"`
