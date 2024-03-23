@@ -22,8 +22,12 @@
             <input class="p-1" type="checkbox" name="showPassword" id="showPassword" @change="showPassword = $event.target.checked">
             <label for="showPassword" class="text-stone-500">Mostrar contraseña</label>
         </div>
+        {{with .FormInvalid}}
+        <p class="text-secondary-500 font-medium" id="form-invalid-feedback" data-form-invalid-tag="">
+            El formulario contiene información inválida
+        </p>
+        {{end}}
         <button class="w-full text-zinc-50 bg-primary-800 px-4 py-2 rounded uppercase">Acceder</button>
     </form>
-
 </div>
 {{end}}
