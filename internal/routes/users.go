@@ -18,6 +18,7 @@ import (
 func RegisterUserRoutes(router *httprouter.Router) {
 	router.GET("/dashboard", auth.WithAuthMiddleware(RenderDashboard))
 	router.GET("/iniciar-sesion", auth.CheckAuthMiddleware(RenderSignin))
+	router.GET("/registrarse", auth.CheckAuthMiddleware(RenderSignup))
 	router.GET("/sign-out", auth.CheckAuthMiddleware(SignOutUser))
 	router.POST("/sign-in", SignInUser)
 	router.POST("/user", CreateUser)
@@ -66,6 +67,23 @@ func RenderDashboard(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 		respondWithError(w, 500, "Ocurrio un error inesperado")
 		return
 	}
+}
+
+func RenderSignup(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
+	if auth.Id != "" {
+		http.Redirect(w, r, "/dashboard", 302)
+		return
+	}
+
+	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/sign-up.html")
+
+	if err != nil {
+		fmt.Printf("Parse err: %v\n", err)
+		respondWithError(w, 500, "Server Error")
+		return
+	}
+
+	templ.Execute(w, nil)
 }
 
 func RenderSignin(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
