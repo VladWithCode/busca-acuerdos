@@ -2,22 +2,24 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	Id                    string `json:"id" db:"id"`
-	Name                  string `json:"name" db:"name"`
-	Lastname              string `json:"lastname" db:"lastname"`
-	Username              string `json:"username" db:"username"`
-	Email                 string `json:"email" db:"email"`
-	Phone                 string `json:"phone" db:"phone_number"`
-	Password              string `json:"password" db:"password"`
+	Id                    string         `json:"id" db:"id"`
+	Name                  string         `json:"name" db:"name"`
+	Lastname              string         `json:"lastname" db:"lastname"`
+	Username              string         `json:"username" db:"username"`
+	Email                 string         `json:"email" db:"email"`
+	Password              string         `json:"password" db:"password"`
+	Phone                 sql.NullString `json:"phone" db:"phone_number"`
+	SubscriptionActive    bool           `json:"subscriptionActive" db:"subscription_active"`
+	SubscriptionExpiresAt time.Time      `json:"subscriptionExpiresAt" db:"subscription_expires_at"`
 	Alerts                []Alert
-	SubscriptionActive    bool      `json:"subscriptionActive" db:"subscription_active"`
-	SubscriptionExpiresAt time.Time `json:"subscriptionExpiresAt" db:"subscription_expires_at"`
 }
 
 func (u *User) ValidatePass(pw string) error {
@@ -30,8 +32,12 @@ func (u *User) ValidatePass(pw string) error {
 	return nil
 }
 
-func CreateUser(id, name, lastname, username, email, phone, password string, subscriptionActive bool) (string, error) {
+func CreateUser(user *User) (string, error) {
 	conn, err := GetPool()
+	if err != nil {
+		return "", err
+	}
+	defer conn.Release()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -39,32 +45,32 @@ func CreateUser(id, name, lastname, username, email, phone, password string, sub
 		return "", err
 	}
 
-	var user User
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 
 	if err != nil {
 		return "", err
 	}
 
-	err = conn.QueryRow(
+	tag, err := conn.Exec(
 		ctx,
-		"INSERT INTO users (id, name, lastname, password, subscription_active, subscription_expires_at, username, email, phone_number) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
-		id,
-		name,
-		lastname,
+		"INSERT INTO users (id, name, lastname, password, subscription_active, subscription_expires_at, username, email, phone_number) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+		user.Id,
+		user.Name,
+		user.Lastname,
 		hashedPassword,
-		subscriptionActive,
+		user.SubscriptionActive,
 		time.Now(),
-		username,
-		email,
-		phone,
-	).Scan(
-		&user.Id,
+		user.Username,
+		user.Email,
+		user.Phone,
 	)
 
 	if err != nil {
 		return "", err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return "", errors.New("No se creó el usuario")
 	}
 
 	return user.Id, nil
