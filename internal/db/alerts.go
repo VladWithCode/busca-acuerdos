@@ -48,6 +48,10 @@ type AutoReportAlert struct {
 	LastAccordDate sql.NullTime   `json:"lastAccordDate" db:"last_accord_date"`
 }
 
+func (a *AutoReportAlert) GetCaseKey() string {
+	return a.CaseId + "+" + a.NatureCode
+}
+
 type AutoReportUser struct {
 	Id       string
 	Name     string
