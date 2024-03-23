@@ -47,7 +47,7 @@
 {{end}}
 
 {{define "error-card"}}
-<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50" data-confirm-modal="error" data-confirm-modal-code="{{.ErrorCode}}" x-data="" x-ref="confirmModal">
+<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50" data-confirm-modal="error" x-data="" x-ref="confirmModal">
     <div class="w-4/5 max-w-screen-md bg-stone-100 rounded p-2 shadow shadow-stone-300 m-auto space-y-3" data-confirm-modal-card="">
         <div class="h-32 w-32 mx-auto">
             <svg class="h-full w-full fill-secondary-500">
@@ -79,12 +79,12 @@
                         }
                     }
                 )
-                const tl = gsap.timeline({ duration: .2, ease: 'power2.inOut' })
+                const tl = gsap.timeline({ duration: 0.3, ease: 'power2.inOut' })
 
                 tl.to('[data-confirm-modal]', { opacity: 0 })
                 tl.to('[data-confirm-modal-card]', { scale: 0 }, '<')
-                tl.to('[data-confirm-modal]', { visibility: 'hidden' })
-                gsap.delayedCall(.3, function() {
+                tl.set('[data-confirm-modal]', { visibility: 'hidden' })
+                gsap.delayedCall(1, function() {
                     document.body.dispatchEvent(confirmEvt)
                     $refs.confirmModal.remove()
                 })
