@@ -19,6 +19,8 @@ type User struct {
 	Phone                 sql.NullString `json:"phone" db:"phone_number"`
 	SubscriptionActive    bool           `json:"subscriptionActive" db:"subscription_active"`
 	SubscriptionExpiresAt time.Time      `json:"subscriptionExpiresAt" db:"subscription_expires_at"`
+	EmailVerified         bool           `json:"emailVerified" db:"email_verified"`
+	PhoneVerified         bool           `json:"phoneVerified" db:"phone_verified"`
 	Alerts                []Alert
 }
 
@@ -137,6 +139,8 @@ func GetUserByUsername(username string) (*User, error) {
 		&user.Username,
 		&user.Email,
 		&user.Phone,
+		&user.EmailVerified,
+		&user.PhoneVerified,
 	)
 
 	if err != nil {

@@ -1,0 +1,99 @@
+{{define "content"}}
+<main class="page bg-stone-50 md:px-8 mx-auto p-4">
+    <h1 class="text-xl font-semibold text-primary-800 py-6">Registrarse</h1>
+    <form
+        id="sign-up-form"
+        class="max-w-sm space-y-3"
+        hx-post="/sign-up"
+        hx-target="#sign-up-form"
+        hx-swap="beforeend"
+        x-data="{ showPassword: false }">
+        <div class="flex gap-4">
+            <div class="space-y-1" id="form-name-group">
+                <label for="name" class="text-primary-800 text-xs font-semibold uppercase">Nombres</label>
+                <input type="text" name="name" id="name" class="w-full rounded bg-stone-300 text-primary-900 p-2 focus:outline-primary-800" required>
+                {{with .NameInvalid}}
+                    <p class="text-secondary-500 font-medium" id="form-password-no-match" data-form-invalid-tag="password">
+                    El nombre no es valido
+                    </p>
+                {{end}}
+            </div>
+            <div class="space-y-1" id="from-lastname-group">
+                <label for="lastname" class="text-primary-800 text-xs font-semibold uppercase">Apellidos</label>
+                <input type="text" name="lastname" id="lastname" class="w-full rounded bg-stone-300 text-primary-900 p-2 focus:outline-primary-800" required>
+                {{with .LastnameInvalid}}
+                    <p class="text-secondary-500 font-medium" id="form-password-no-match" data-form-invalid-tag="password">
+                    El apellido no es valido
+                    </p>
+                {{end}}
+            </div>
+        </div>
+        <div class="space-y-1" id="form-username-group">
+            <label for="username" class="text-primary-800 text-xs font-semibold uppercase">Usuario</label>
+            <input type="text" name="username" id="username" class="w-full rounded bg-stone-300 text-primary-900 p-2 focus:outline-primary-800" required>
+            {{with .UsernameInvalid}}
+                <p class="text-secondary-500 font-medium" id="form-password-no-match" data-form-invalid-tag="password">
+                El usuario no es valido
+                </p>
+            {{end}}
+        </div>
+        <div class="space-y-1" id="form-email-group">
+            <label for="email" class="text-primary-800 text-xs font-semibold uppercase">Email</label>
+            <input type="email" name="email" id="email" class="w-full rounded bg-stone-300 text-primary-900 p-2 focus:outline-primary-800" required>
+            {{with .EmailInvalid}}
+                <p class="text-secondary-500 font-medium" id="form-password-no-match" data-form-invalid-tag="password">
+                El email no es valido
+                </p>
+            {{end}}
+        </div>
+        <div class="space-y-1" id="form-password-group">
+            <label for="password" class="text-primary-800 text-xs font-semibold uppercase">Contraseña</label>
+            <input
+                type="password" 
+                name="password" 
+                id="password" 
+                class="w-full rounded bg-stone-300 text-primary-900 shadow-inner shadow-stone-200 p-2 focus:outline-primary-800" 
+                :type="showPassword ? 'text' : 'password'" 
+                required>
+            {{with .PasswordInvalid}}
+                <p class="text-secondary-500 font-medium" id="form-password-no-match" data-form-invalid-tag="password">
+                La contraseña es inválida
+                </p>
+            {{end}}
+        </div>
+        <div class="space-y-1" id="form-confirm-password-group">
+            <label for="confirmPassword" class="text-primary-800 text-xs font-semibold uppercase">Confirmar Contraseña</label>
+            <input 
+                type="password" 
+                name="confirmPassword" 
+                id="confirmPassword" 
+                class="w-full rounded bg-stone-300 text-primary-900 shadow-inner shadow-stone-200 p-2 focus:outline-primary-800" 
+                :type="showPassword ? 'text' : 'password'"
+                required>
+            {{with .PasswordNoMatch}}
+                <p class="text-secondary-500 font-medium" id="form-password-no-match" data-form-invalid-tag="password">
+                Las contraseñas no coinciden
+                </p>
+            {{end}}
+        </div>
+        <div class="flex gap-2 items-center py-4">
+            <input class="p-1" type="checkbox" name="showPassword" id="showPassword" @change="showPassword = $event.target.checked">
+            <label for="showPassword" class="text-stone-500">Mostrar contraseña</label>
+        </div>
+        <p class="text-secondary-500 font-medium" id="form-invalid-feedback" data-form-invalid-tag="form"></p>
+        <button class="w-full text-zinc-50 bg-primary-800 px-4 py-2 rounded uppercase" data-form-submit-btn="">Registrarse</button>
+    </form>
+</main>
+<script>
+</script>
+{{end}}
+{{define "signup-success"}}
+<div class="w-4/5 max-w-screen-sm mx-auto mt-12" id="signup-success-card">
+    <div class="flex flex-col p-2 rounded bg-stone-100 shadow shadow-stone-300 gap-2 items-center justify-center">
+        <svg class="w-32 h-32 fill-emerald-500">
+            <use href="/svg/success.svg#success"></use>
+        </svg>
+        <p class="w-[24ch] mx-auto">Se envió un enlace al correo {{with .RegistrationEmail}}.{{end}} para confirmar el registro</p>
+    </div>
+</div>
+{{end}}

@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,10 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/julienschmidt/httprouter"
 	"github.com/vladwithcode/juzgados/internal"
 	"github.com/vladwithcode/juzgados/internal/auth"
 	"github.com/vladwithcode/juzgados/internal/db"
+	"github.com/vladwithcode/juzgados/internal/mailing"
 )
 
 func RegisterUserRoutes(router *httprouter.Router) {
@@ -20,6 +24,7 @@ func RegisterUserRoutes(router *httprouter.Router) {
 	router.GET("/iniciar-sesion", auth.CheckAuthMiddleware(RenderSignin))
 	router.GET("/registrarse", auth.CheckAuthMiddleware(RenderSignup))
 	router.GET("/sign-out", auth.CheckAuthMiddleware(SignOutUser))
+	router.POST("/sign-up", SignUpUser)
 	router.POST("/sign-in", SignInUser)
 	router.POST("/user", CreateUser)
 }
@@ -143,6 +148,121 @@ func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	if err != nil {
 		fmt.Printf("MkDir Err: %v", err)
+	}
+}
+
+func SignUpUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	err := r.ParseForm()
+
+	if err != nil {
+		fmt.Printf("ParseForm err: %v\n", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("HX-Reswap", "beforebegin")
+		w.Header().Set("HX-Reselect", "#form-invalid-feedback")
+		w.Header().Set("HX-Retarget", "[data-form-submit-btn]")
+		w.WriteHeader(400)
+		w.Write([]byte("<p class=\"text-secondary-500 font-medium\" id=\"form-invalid-feedback\" data-form-invalid-tag=\"form\">El formulario contiene información inválida</p>"))
+		return
+	}
+
+	formTempl, err := template.New("layout.html").ParseFiles("web/templates/layout.html", "web/templates/sign-up.html")
+
+	if err != nil {
+		fmt.Printf("Parse err: %v\n", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("HX-Redirect", "/500")
+		w.WriteHeader(500)
+		return
+	}
+
+	pw := r.Form.Get("password")
+	confirmPw := r.Form.Get("confirmPassword")
+
+	if pw != confirmPw {
+		w.Header().Set("HX-Reselect", "#form-confirm-password-group")
+		w.Header().Set("HX-Retarget", "#form-confirm-password-group")
+		w.Header().Set("HX-Reswap", "outerHTML")
+		w.WriteHeader(400)
+		formTempl.Execute(w, map[string]bool{
+			"PasswordNoMatch": true,
+		})
+		return
+	}
+
+	id, _ := uuid.NewV7()
+
+	user := &db.User{
+		Id:       id.String(),
+		Name:     r.Form.Get("name"),
+		Lastname: r.Form.Get("lastname"),
+		Username: r.Form.Get("username"),
+		Email:    r.Form.Get("email"),
+		Password: pw,
+	}
+
+	_, err = db.CreateUser(user)
+
+	if err != nil {
+		var PgErr *pgconn.PgError
+		isPgErr := errors.As(err, &PgErr)
+		if isPgErr {
+			//fmt.Printf("PgErr: %+v\n", *PgErr)
+			templ, err := template.New("blocks.html").ParseFiles("web/templates/blocks.html")
+
+			if err == nil && PgErr.Code == "23505" {
+				w.WriteHeader(400)
+				templ.ExecuteTemplate(w, "error-card", map[string]string{
+					"Message":   "Usuario existente",
+					"BtnLabel":  "Aceptar",
+					"ErrorCode": PgErr.Code,
+				})
+				return
+			}
+		}
+
+		fmt.Printf("Create err: %v\n", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
+
+	userUUID, err := uuid.Parse(user.Id)
+	if err != nil {
+		fmt.Printf("Parse id err: %v\n", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
+
+	otl, err := db.CreateVerifyOTL(userUUID)
+
+	if err != nil {
+		fmt.Printf("Create OTL err: %v\n", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
+
+	if err := mailing.SendVerificationMail(user.Email, otl); err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
+
+	w.Header().Set("HX-Reswap", "outerHTML")
+	err = formTempl.ExecuteTemplate(w, "signup-success", map[string]string{
+		"RegistrationEmail": user.Email,
+	})
+
+	if err != nil {
+		fmt.Printf("Execute succ templ err: %v\n", err)
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
 	}
 }
 
