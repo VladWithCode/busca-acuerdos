@@ -120,7 +120,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	_, err = db.CreateUser(data.Id, data.Name, data.Lastname, data.Username, data.Email, data.Phone, data.Password, data.SubscriptionActive)
+	_, err = db.CreateUser(&data)
 
 	if err != nil {
 		fmt.Println(err)
