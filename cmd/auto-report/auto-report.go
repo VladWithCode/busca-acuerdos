@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"github.com/vladwithcode/juzgados/internal/alerts"
 	"github.com/vladwithcode/juzgados/internal/db"
 	"github.com/vladwithcode/juzgados/internal/tsj"
+	"github.com/vladwithcode/juzgados/internal/whatsapp"
 )
 
 // subscriberMeta is a struct holding a pointer to the subscriber User
@@ -45,13 +47,14 @@ func main() {
 	err = godotenv.Load("/home/vladwb/me/Dev/go/juzgados/.env")
 
 	if err != nil {
-		fmt.Printf("env err: %v\n", err)
+		log.Fatalf("env err: %v\n", err)
+		return
 	}
 
 	dbPool, err := db.Connect()
 
 	if err != nil {
-		fmt.Printf("Error while connecting to DB: %v", err)
+		log.Fatalf("Error while connecting to DB: %v", err)
 		return
 	}
 	defer dbPool.Close()
@@ -59,7 +62,7 @@ func main() {
 	userAlerts, err := db.FindAutoReportAlertsWithUserData()
 
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
+		log.Fatalf("Find alerts err: %v\n", err)
 		return
 	}
 
@@ -68,7 +71,8 @@ func main() {
 
 	for _, user := range userAlerts {
 		for alertIdx, alert := range user.Alerts {
-			cK := fmt.Sprintf("%v-%v", alert.CaseId, alert.NatureCode)
+			//cK := fmt.Sprintf("%v-%v", alert.CaseId, alert.NatureCode)
+			cK := alert.GetCaseKey()
 
 			suscriber := subscriberMeta{
 				alertPos: alertIdx,
@@ -90,13 +94,13 @@ func main() {
 	resCases, err := tsj.GetCasesData(caseKeys, 30)
 
 	if err != nil {
-		fmt.Printf("GetCases err: %v\n", err)
+		log.Fatalf("GetCases err: %v\n", err)
 		return
 	}
 
 	for _, c := range resCases.Docs {
 		caseId := strings.TrimSpace(strings.TrimLeft(c.Case, "0"))
-		cK := fmt.Sprintf("%v-%v", caseId, c.NatureCode)
+		cK := fmt.Sprintf("%v+%v", caseId, c.NatureCode)
 
 		if subs, ok := subscribers[cK]; ok {
 			for _, sub := range subs {
@@ -118,20 +122,20 @@ func main() {
 			_, err := alerts.GenReportPdfWithData(*user)
 
 			if err != nil {
-				fmt.Printf("GenReport err: %v\n", err)
+				log.Fatalf("GenReport err: %v\n", err)
 				return
 			}
 
-			//pdfUrl := fmt.Sprintf("%v://%v%v", r.URL.Scheme, r.URL.Hostname(), docPath)
+			err = whatsapp.SendReportMessage(*user, "http://tsjdgo.gob.mx/Recursos/images/flash/ListasAcuerdos/1132024/fam2.pdf")
 
-			// err = whatsapp.SendReportMessage(*user, "http://tsjdgo.gob.mx/Recursos/images/flash/ListasAcuerdos/1132024/fam2.pdf")
-
-			// if err != nil {
-			// 	fmt.Printf("GenReport err: %v\n", err)
-			// 	return
-			// }
+			if err != nil {
+				log.Fatalf("SendReport err: %v\n", err)
+				return
+			}
 		}(user)
 	}
 
 	wg.Wait()
+
+	os.Exit(0)
 }
