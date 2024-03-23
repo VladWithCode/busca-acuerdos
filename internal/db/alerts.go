@@ -179,7 +179,7 @@ func FindAutoReportAlertsWithUserData() ([]*AutoReportUser, error) {
 
 	var resultUsers = []*AutoReportUser{}
 
-	rows, err := conn.Query(ctx, "SELECT users.id, users.name, users.lastname, users.email, users.phone_number, ARRAY_AGG((alerts.id, alerts.case_id, alerts.nature_code, alerts.last_accord, alerts.last_accord_date)) AS alerts FROM users LEFT JOIN alerts ON users.id = alerts.user_id WHERE alerts.active = true GROUP BY users.id, users.id, users.name, users.lastname, users.email, users.phone_number;")
+	rows, err := conn.Query(ctx, "SELECT users.id, users.name, users.lastname, users.email, users.phone_number, ARRAY_AGG((alerts.id, alerts.case_id, alerts.nature_code, alerts.last_accord, alerts.last_accord_date)) AS alerts FROM users LEFT JOIN alerts ON users.id = alerts.user_id WHERE alerts.active = true AND users.phone_number IS NOT NULL GROUP BY users.id, users.id, users.name, users.lastname, users.email, users.phone_number;")
 
 	if err != nil {
 		return nil, err
