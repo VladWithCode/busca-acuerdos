@@ -1,4 +1,4 @@
-./main
+cmd/main/main
 
 # Ignore files in cmd dir
 cmd/auto-report/auto-report
