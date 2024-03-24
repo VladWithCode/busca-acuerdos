@@ -25,17 +25,20 @@ func FormatDate(date time.Time) string {
 		d    int    = date.Day()
 		m    int    = int(date.Month())
 		y    int    = date.Year()
-		mStr string = fmt.Sprint(m)
-		dStr string = fmt.Sprint(d)
+		mStr string = MONTHS[m-1]
 	)
 
-	if m < 10 {
-		mStr = MONTHS[m-1]
-	}
+	return fmt.Sprintf("%02d de %v de %d", d, mStr, y)
+}
 
-	if d < 10 {
-		dStr = fmt.Sprintf("0%d", d)
-	}
+func FormatTimestampToString(ts time.Time) string {
+	dateStr := FormatDate(ts)
 
-	return fmt.Sprintf("%v de %v de %v", dStr, mStr, y)
+	var (
+		h int = ts.Hour()
+		m int = ts.Minute()
+		s int = ts.Second()
+	)
+
+	return fmt.Sprintf("%s %02d:%02d:%02d", dateStr, h, m, s)
 }
