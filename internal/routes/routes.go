@@ -19,6 +19,9 @@ func NewRouter() http.Handler {
 
 	// Static Routes
 	router.GET("/", auth.CheckAuthMiddleware(indexHandler))
+	router.GET("/error/500", auth.CheckAuthMiddleware(Render500Error))
+
+	router.GET("/tests", tests)
 
 	// API Routes
 	router.GET("/api/file", getFile)
@@ -46,6 +49,14 @@ func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, a
 	if err != nil {
 		fmt.Println(err)
 		respondWithError(w, 500, "Server Error")
+func Render500Error(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
+	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/500.html")
+
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(500)
+		w.Write([]byte("Ha ocurrido un error inesperado en el servidor"))
+		return
 	}
 
 	data := map[string]any{
