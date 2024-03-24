@@ -104,6 +104,8 @@ func GetUserById(id string) (*User, error) {
 		&user.Username,
 		&user.Email,
 		&user.Phone,
+		&user.EmailVerified,
+		&user.PhoneVerified,
 	)
 
 	if err != nil {
