@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -27,4 +28,19 @@ func GetPool() (*pgxpool.Conn, error) {
 	}
 
 	return conn, nil
+}
+
+func GetTxAndPool(ctx context.Context) (pgx.Tx, *pgxpool.Conn, error) {
+	conn, err := DB.Acquire(context.Background())
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return tx, conn, nil
 }
