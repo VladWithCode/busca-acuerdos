@@ -1,0 +1,23 @@
+{{define "content"}}
+<main class="page bg-stone-50 md:p-8 p-4">
+    <h1 class="text-xl font-semibold text-primary-800 py-6">Verificar correo electronico</h1>
+
+    <p class="">
+    {{if .VerificationSuccess}}
+        {{with .VerificationMsg}}
+        {{.}}
+        {{else}}
+        Tu correo fue verificado con exito. 
+        Ya puedes usarlo para recibir notificaciones de tus alertas
+        {{end}}
+    {{else}}
+        {{with .VerificationErrMsg}}
+        {{.}}
+        {{else}}
+        Ocurrió un error al intentar verificar tu correo. 
+        Puedes intentarlo de nuevo con un nuevo link generandolo <a href="/usuario/datos">aquí</a>
+        {{end}}
+    {{end}}
+    </p>
+</main>
+{{end}}

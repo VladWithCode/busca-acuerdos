@@ -26,7 +26,9 @@ func RegisterUserRoutes(router *httprouter.Router) {
 	router.GET("/sign-out", auth.CheckAuthMiddleware(SignOutUser))
 	router.POST("/sign-up", SignUpUser)
 	router.POST("/sign-in", SignInUser)
-	router.POST("/user", CreateUser)
+
+	router.GET("/api/users/verification", RenderVerification)
+	router.POST("/api/user", CreateUser)
 }
 
 func RenderDashboard(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
@@ -110,6 +112,116 @@ func RenderSignin(w http.ResponseWriter, r *http.Request, _ httprouter.Params, a
 	}
 
 	templ.Execute(w, data)
+}
+
+func RenderVerification(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	code := r.URL.Query().Get("code")
+	userId := r.URL.Query().Get("userId")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+	tx, conn, err := db.GetTxAndPool(ctx)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
+	defer conn.Release()
+	defer tx.Rollback(ctx)
+
+	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/email-verification.html")
+
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
+
+	data := map[string]any{
+		"VerificationSuccess": false,
+		"VerificationMsg":     "",
+		"VerificationErrMsg":  "",
+	}
+	cId, _ := uuid.Parse(code)
+	uId, _ := uuid.Parse(userId)
+
+	otl, err := db.TxFindUserOTLinkByCode(ctx, tx, cId, uId)
+
+	if err != nil {
+		var target *db.NonExistentOTLError
+		if errors.As(err, &target) {
+			data["VerificationErrMsg"] = "El codigo proporcionado no existe o no esta relacionado al usuario con el que se intento verificar"
+			w.WriteHeader(400)
+		} else {
+			w.WriteHeader(500)
+		}
+		err = templ.Execute(w, data)
+
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte("Ocurrio un error inesperado"))
+		}
+		return
+	}
+
+	if !otl.CheckExpiration() {
+		data["VerificationErrMsg"] = fmt.Sprintf("El codigo proporcionado expiró el %s", internal.FormatTimestampToString(otl.ExpiresAt))
+		w.WriteHeader(400)
+		err = templ.Execute(w, data)
+
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte("Ocurrio un error inesperado"))
+		}
+		return
+	}
+
+	if otl.Used {
+		data["VerificationErrMsg"] = "El código ya fue usado"
+		w.WriteHeader(400)
+		err = templ.Execute(w, data)
+
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte("Ocurrio un error inesperado"))
+		}
+		return
+	}
+
+	err = db.TxMarkOTLinkAsUsed(ctx, tx, cId, uId)
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
+
+	err = db.TxVerifyUserEmail(ctx, tx, userId)
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		fmt.Printf("Commit err: %v\n", err)
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
+
+	data["VerificationSuccess"] = true
+
+	err = templ.Execute(w, data)
+
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		w.WriteHeader(500)
+		w.Write([]byte("Ocurrio un error inesperado"))
+		return
+	}
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
