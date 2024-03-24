@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -154,6 +156,33 @@ func GetUserByUsername(username string) (*User, error) {
 
 func TxVerifyUserEmail(ctx context.Context, tx pgx.Tx, userId string) error {
 	tag, err := tx.Exec(
+		ctx,
+		"UPDATE users SET email_verified = TRUE WHERE id = $1",
+		userId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return errors.New(fmt.Sprintf("No se encontró usuario con id %v", userId))
+	}
+
+	return nil
+}
+
+func VerifyUserEmail(userId string) error {
+	conn, err := GetPool()
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tag, err := conn.Exec(
 		ctx,
 		"UPDATE users SET email_verified = TRUE WHERE id = $1",
 		userId,
