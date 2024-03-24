@@ -37,7 +37,11 @@ func SendVerificationMail(recipient string, otl *db.OTLink) error {
 	var b bytes.Buffer
 
 	err = templ.Execute(&b, map[string]string{
-		"VerificationLink": fmt.Sprintf("http://192.168.1.4:8080/api/users/verification?code=%v", otl.Code.String()),
+		"VerificationLink": fmt.Sprintf(
+			"http://192.168.1.4:8080/api/users/verification?code=%v&userId=%v",
+			otl.Code.String(),
+			otl.UserId.String(),
+		),
 	})
 
 	if err != nil {
