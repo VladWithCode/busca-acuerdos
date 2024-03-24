@@ -149,3 +149,21 @@ func GetUserByUsername(username string) (*User, error) {
 
 	return &user, nil
 }
+
+func TxVerifyUserEmail(ctx context.Context, tx pgx.Tx, userId string) error {
+	tag, err := tx.Exec(
+		ctx,
+		"UPDATE users SET email_verified = TRUE WHERE id = $1",
+		userId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return errors.New(fmt.Sprintf("No se encontró usuario con id %v", userId))
+	}
+
+	return nil
+}

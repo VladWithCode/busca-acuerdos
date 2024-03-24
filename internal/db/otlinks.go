@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type OTLink struct {
@@ -20,15 +21,17 @@ type OTLink struct {
 }
 
 func (otl *OTLink) CheckExpiration() bool {
-	return otl.ExpiresAt.Before(time.Now())
+	return otl.ExpiresAt.After(time.Now())
 }
 
 type NonExistentOTLError struct {
-	Err string
+	Err  string
+	Code string
+	User string
 }
 
 func (e *NonExistentOTLError) Error() string {
-	return e.Err
+	return fmt.Sprintf("OTLink con codigo %v para usuario %v no existe", e.Code, e.User)
 }
 
 const (
@@ -97,6 +100,62 @@ func CreateLoginOTL(userId uuid.UUID) (*OTLink, error) {
 
 func CreateResetPassOTL(userId uuid.UUID) (*OTLink, error) {
 	return CreateOTLink(userId, OTLActionResetPass)
+}
+
+func TxFindUserOTLinkByCode(ctx context.Context, tx pgx.Tx, code, userId uuid.UUID) (*OTLink, error) {
+	row, err := tx.Query(
+		ctx,
+		"SELECT * FROM otlinks WHERE code = $1 AND user_id = $2",
+		code,
+		userId,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, &NonExistentOTLError{
+				Code: code.String(),
+				User: userId.String(),
+			}
+		}
+
+		return nil, err
+	}
+
+	otl, err := pgx.CollectOneRow[OTLink](row, pgx.RowToStructByName[OTLink])
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, &NonExistentOTLError{
+				Code: code.String(),
+				User: userId.String(),
+			}
+		}
+
+		return nil, err
+	}
+
+	return &otl, nil
+}
+
+func TxMarkOTLinkAsUsed(ctx context.Context, tx pgx.Tx, code, userId uuid.UUID) error {
+	tag, err := tx.Exec(
+		ctx,
+		"UPDATE otlinks SET used = TRUE WHERE code = $1 AND user_id = $2",
+		code,
+		userId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return &NonExistentOTLError{
+			Err: fmt.Sprintf("OTLink con codigo %v para usuario %v no existe", code.String(), userId.String()),
+		}
+	}
+
+	return nil
 }
 
 func MarkOTLinkAsUsed(code uuid.UUID, userId uuid.UUID) error {
