@@ -49,6 +49,16 @@ func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params, a
 	if err != nil {
 		fmt.Println(err)
 		respondWithError(w, 500, "Server Error")
+		return
+	}
+
+	data := map[string]any{
+		"User": auth,
+	}
+
+	templ.Execute(w, data)
+}
+
 func Render500Error(w http.ResponseWriter, r *http.Request, _ httprouter.Params, auth *auth.Auth) {
 	templ, err := template.ParseFiles("web/templates/layout.html", "web/templates/500.html")
 
