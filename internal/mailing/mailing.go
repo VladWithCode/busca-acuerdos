@@ -14,11 +14,13 @@ import (
 const SEND_AS = "no-reply@certx-mx.org"
 
 func SendVerificationMail(recipient string, otl *db.OTLink) error {
-	var pw = os.Getenv("GOOGLE_MAIL_APP_PASS")
-	var email_address = os.Getenv("GOOGLE_MAIL_ADDRESS")
+	pw := os.Getenv("GOOGLE_MAIL_APP_PASS")
+	emailAddress := os.Getenv("GOOGLE_MAIL_ADDRESS")
+	siteHostname := os.Getenv("TSJ_SITE_HOSTNAME")
+	port := os.Getenv("PORT")
 
-	if pw == "" || email_address == "" {
-		fmt.Printf("[Mailing] Env is not set-up correctly. pw:%v email:%v", pw, email_address)
+	if pw == "" || emailAddress == "" {
+		fmt.Printf("[Mailing] Env is not set-up correctly. pw:%v email:%v", pw, emailAddress)
 		return errors.New("Env Missing")
 	}
 
@@ -35,13 +37,16 @@ func SendVerificationMail(recipient string, otl *db.OTLink) error {
 	}
 
 	var b bytes.Buffer
+	href := fmt.Sprintf(
+		"http://%v:%v/api/users/verification?code=%v&userId=%v",
+		siteHostname,
+		port,
+		otl.Code.String(),
+		otl.UserId.String(),
+	)
 
 	err = templ.Execute(&b, map[string]string{
-		"VerificationLink": fmt.Sprintf(
-			"http://192.168.1.4:8080/api/users/verification?code=%v&userId=%v",
-			otl.Code.String(),
-			otl.UserId.String(),
-		),
+		"VerificationLink": href,
 	})
 
 	if err != nil {
@@ -50,7 +55,7 @@ func SendVerificationMail(recipient string, otl *db.OTLink) error {
 
 	msg.SetBody("text/html", b.String())
 
-	d := gomail.NewDialer("smtp.gmail.com", 587, email_address, pw)
+	d := gomail.NewDialer("smtp.gmail.com", 587, emailAddress, pw)
 	if err := d.DialAndSend(msg); err != nil {
 		fmt.Printf("Send err: %v\n", err)
 		return err
