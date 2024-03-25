@@ -377,6 +377,12 @@ func SignUpUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		w.WriteHeader(500)
 		w.Write([]byte("Ocurrio un error inesperado"))
 	}
+
+	err = user.CreateReportDir()
+
+	if err != nil {
+		fmt.Printf("Failed to create report dir for userId: %v", user.Id)
+	}
 }
 
 func SignInUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -28,6 +30,22 @@ type User struct {
 
 func (u *User) ValidatePass(pw string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(pw))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *User) CreateReportDir() error {
+	tsjDir := os.Getenv("TSJ_DIR")
+	if tsjDir != "" {
+		tsjDir = tsjDir + "/"
+	}
+	reportsDir := fmt.Sprintf("%vweb/static/reports/%v", tsjDir, u.Id)
+
+	err := os.MkdirAll(reportsDir, fs.ModeDir)
 
 	if err != nil {
 		return err
