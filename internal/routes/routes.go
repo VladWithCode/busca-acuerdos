@@ -21,8 +21,6 @@ func NewRouter() http.Handler {
 	router.GET("/", auth.CheckAuthMiddleware(indexHandler))
 	router.GET("/error/500", auth.CheckAuthMiddleware(Render500Error))
 
-	router.GET("/tests", tests)
-
 	// API Routes
 	router.GET("/api/file", getFile)
 
