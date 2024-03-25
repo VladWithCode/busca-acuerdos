@@ -7,4 +7,4 @@ cmd/auto-report/auto-report
 web/static/reports/*/
 
 # Ignore .env files
-.env*
+.env
