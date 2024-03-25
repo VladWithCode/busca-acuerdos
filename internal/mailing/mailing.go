@@ -17,7 +17,6 @@ func SendVerificationMail(recipient string, otl *db.OTLink) error {
 	pw := os.Getenv("GOOGLE_MAIL_APP_PASS")
 	emailAddress := os.Getenv("GOOGLE_MAIL_ADDRESS")
 	siteHostname := os.Getenv("TSJ_SITE_HOSTNAME")
-	port := os.Getenv("PORT")
 
 	if pw == "" || emailAddress == "" {
 		fmt.Printf("[Mailing] Env is not set-up correctly. pw:%v email:%v", pw, emailAddress)
@@ -38,9 +37,8 @@ func SendVerificationMail(recipient string, otl *db.OTLink) error {
 
 	var b bytes.Buffer
 	href := fmt.Sprintf(
-		"http://%v:%v/api/users/verification?code=%v&userId=%v",
+		"http://%v/api/users/verification?code=%v&userId=%v",
 		siteHostname,
-		port,
 		otl.Code.String(),
 		otl.UserId.String(),
 	)
