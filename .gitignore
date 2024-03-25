@@ -5,3 +5,6 @@ cmd/auto-report/auto-report
 
 # Ignore report dirs
 web/static/reports/*/
+
+# Ignore .env files
+.env*
