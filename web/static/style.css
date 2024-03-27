@@ -713,6 +713,10 @@ video {
   margin-top: 2.5rem;
 }
 
+.mt-12 {
+  margin-top: 3rem;
+}
+
 .mt-16 {
   margin-top: 4rem;
 }
@@ -733,8 +737,12 @@ video {
   margin-top: auto;
 }
 
-.mt-12 {
-  margin-top: 3rem;
+.ml-8 {
+  margin-left: 2rem;
+}
+
+.ml-12 {
+  margin-left: 3rem;
 }
 
 .block {
@@ -803,10 +811,6 @@ video {
 
 .h-svh {
   height: 100svh;
-}
-
-.h-20 {
-  height: 5rem;
 }
 
 .w-0 {
@@ -882,8 +886,8 @@ video {
   width: 100vw;
 }
 
-.w-20 {
-  width: 5rem;
+.max-w-\[42ch\] {
+  max-width: 42ch;
 }
 
 .max-w-\[95\%\] {
@@ -898,12 +902,12 @@ video {
   max-width: 768px;
 }
 
-.max-w-sm {
-  max-width: 24rem;
-}
-
 .max-w-screen-sm {
   max-width: 640px;
+}
+
+.max-w-sm {
+  max-width: 24rem;
 }
 
 .flex-1 {
@@ -1032,12 +1036,12 @@ video {
   gap: 0.75rem;
 }
 
-.gap-6 {
-  gap: 1.5rem;
-}
-
 .gap-4 {
   gap: 1rem;
+}
+
+.gap-6 {
+  gap: 1.5rem;
 }
 
 .gap-x-1 {
@@ -1429,20 +1433,12 @@ video {
   padding-right: 0.875rem;
 }
 
-.pt-10 {
-  padding-top: 2.5rem;
-}
-
 .pt-12 {
   padding-top: 3rem;
 }
 
 .pt-4 {
   padding-top: 1rem;
-}
-
-.pt-8 {
-  padding-top: 2rem;
 }
 
 .text-center {
@@ -1461,6 +1457,11 @@ video {
 .text-3xl {
   font-size: 1.875rem;
   line-height: 2.25rem;
+}
+
+.text-4xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
 }
 
 .text-5xl {
@@ -1537,6 +1538,11 @@ video {
   color: rgb(34 13 35 / var(--tw-text-opacity));
 }
 
+.text-secondary-500 {
+  --tw-text-opacity: 1;
+  color: rgb(252 74 83 / var(--tw-text-opacity));
+}
+
 .text-secondary-600 {
   --tw-text-opacity: 1;
   color: rgb(224 70 78 / var(--tw-text-opacity));
@@ -1572,11 +1578,6 @@ video {
   color: rgb(250 250 250 / var(--tw-text-opacity));
 }
 
-.text-secondary-500 {
-  --tw-text-opacity: 1;
-  color: rgb(252 74 83 / var(--tw-text-opacity));
-}
-
 .underline {
   text-decoration-line: underline;
 }
@@ -1591,6 +1592,10 @@ video {
 
 .opacity-45 {
   opacity: 0.45;
+}
+
+.opacity-75 {
+  opacity: 0.75;
 }
 
 .opacity-90 {
@@ -1659,7 +1664,7 @@ body {
 }
 
 .page {
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 60px);
   max-width: 100%;
   overflow: hidden auto;
 }
@@ -1732,8 +1737,16 @@ body {
     display: block;
   }
 
+  .md\:flex {
+    display: flex;
+  }
+
   .md\:hidden {
     display: none;
+  }
+
+  .md\:p-8 {
+    padding: 2rem;
   }
 
   .md\:px-8 {

@@ -113,17 +113,28 @@
 		{{block "header" .}}
         <header class="relative bg-stone-50 py-4 px-5 flex justify-between mx-auto" x-data="">
             <h2 class="text-xl font-medium">TSJ Search</h2>
-            <nav class="hidden space-x-4">
+            <nav class="hidden md:flex items-center gap-4">
                 <a class="font-medium text-lg" href="/">Inicio</a>
-                <a class="font-medium text-lg" href="/">Buscador</a>
+                <a class="font-medium text-lg" href="#buscador">Buscador</a>
+                <!--
                 <a class="font-medium text-lg" href="/">Servicios</a>
                 <a class="font-medium text-lg" href="/">Precios</a>
                 <a class="font-medium text-lg" href="/">Contacto</a>
+                -->
+                <ul class="flex flex-initial gap-4 ml-12">
+                    {{with .User.Id}}
+                    <li class="px-2 py-1 underline underline-offset-2"><a href="/dashboard">Mi portal</a></li>
+                    <li class="px-2 py-1 underline underline-offset-2"><a href="/sign-out">Cerrar Sesion</a></li>
+                    {{else}}
+                    <li class="px-2 py-1 underline underline-offset-2"><a href="/iniciar-sesion">Iniciar Sesion</a></li>
+                    <li class="px-2 py-1 bg-primary-900 text-stone-50 rounded"><a href="/registrarse">Registrarse</a></li>
+                    {{end}}
+                </ul>
             </nav>
 
             <!-- Nav toggler -->
             <button 
-                class="relative ml-auto text-xs font-medium uppercase text-stone-50 bg-primary-900 px-2 rounded-full"
+                class="relative ml-auto text-xs font-medium uppercase text-stone-50 bg-primary-900 px-2 rounded-full md:hidden"
                 @click="gsap.to('[data-mobile-menu]', { width: '100%', ease: 'power2.inOut', duration: .3 })"
                 data-menu-toggler="" >
                 menu
@@ -136,36 +147,37 @@
                 </div>
                 */}}
             </button>
+
+            <!-- Mobile Navigation Menu -->
+            <div class="fixed h-svh inset-0 text-primary-800 overflow-hidden z-50 w-0 md:hidden" data-mobile-menu="" x-data="">
+                <div class="relative flex flex-col bg-stone-50 ml-auto h-full p-4 z-10 w-full">
+                    <div class="flex flex-initial items-center pb-4 relative z-10">
+                        <h3 class="text-xl font-bold">Menu</h3>
+                        <button class="ml-auto text-3xl font-bold" @click="gsap.to('[data-mobile-menu]', { width: 0, ease: 'power2.inOut', duration: .3 })">&times;</button>
+                    </div>
+                    <ul class="flex-auto space-y-2 text-lg font-medium">
+                        <li class="transition duration-300 bg-primary-900 text-stone-50 px-2 py-1 rounded" data-nav-selected="true" data-nav-option="0"><a class="" href="/">Inicio</a> </li>
+                        <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="1"><a class="" href="/#buscador">Buscador</a> </li>
+                        <!--
+                            <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="2"><a class="" href="/#servicios">Servicios</a> </li>
+                            <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="3"><a class="" href="/#precios">Precios</a> </li>
+                            <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="4"><a class="" href="/#contacto">Contacto</a> </li>
+                        -->
+                    </ul>
+                    <ul class="flex flex-initial justify-between mt-auto">
+                        {{with .User.Id}}
+                        <li class="px-2 py-1 underline underline-offset-2"><a href="/dashboard">Mi portal</a></li>
+                        <li class="px-2 py-1 underline underline-offset-2"><a href="/sign-out">Cerrar Sesion</a></li>
+                        {{else}}
+                        <li class="px-2 py-1 underline underline-offset-2"><a href="/iniciar-sesion">Iniciar Sesion</a></li>
+                        <li class="px-2 py-1 bg-primary-900 text-stone-50 rounded"><a href="/registrarse">Registrarse</a></li>
+                        {{end}}
+                    </ul>
+                </div>
+            </div>
         </header>
 
-        <!-- Mobile Navigation Menu -->
-        <div class="fixed h-svh inset-0 text-primary-800 overflow-hidden z-50 w-0 md:hidden" data-mobile-menu="" x-data="">
-            <div class="relative flex flex-col bg-stone-50 ml-auto h-full p-4 z-10 w-full">
-                <div class="flex flex-initial items-center pb-4 relative z-10">
-                    <h3 class="text-xl font-bold">Menu</h3>
-                    <button class="ml-auto text-3xl font-bold" @click="gsap.to('[data-mobile-menu]', { width: 0, ease: 'power2.inOut', duration: .3 })">&times;</button>
-                </div>
-                <ul class="flex-auto space-y-2 text-lg font-medium">
-                    <li class="transition duration-300 bg-primary-900 text-stone-50 px-2 py-1 rounded" data-nav-selected="true" data-nav-option="0"><a class="" href="/">Inicio</a> </li>
-                    <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="1"><a class="" href="/#buscador">Buscador</a> </li>
-                    <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="2"><a class="" href="/#servicios">Servicios</a> </li>
-                    <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="3"><a class="" href="/#precios">Precios</a> </li>
-                    <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="4"><a class="" href="/#contacto">Contacto</a> </li>
-                </ul>
-                <ul class="flex flex-initial justify-between mt-auto">
-                    {{with .User.Id}}
-                    <li class="px-2 py-1 underline underline-offset-2"><a href="/dashboard">Mi portal</a></li>
-                    <li class="px-2 py-1 underline underline-offset-2"><a href="/sign-out">Cerrar Sesion</a></li>
-                    {{else}}
-                    <li class="px-2 py-1 underline underline-offset-2"><a href="/iniciar-sesion">Iniciar Sesion</a></li>
-                    <li class="px-2 py-1 bg-primary-900 text-stone-50 rounded"><a href="/registrarse">Registrarse</a></li>
-                    {{end}}
-                </ul>
-            </div>
-        </div>
-
         <!-- Breadcrumbs -->
-        
 		{{end}} 
 
         {{template "content" .}}
