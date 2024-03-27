@@ -3,11 +3,12 @@
     <h1 class="text-xl font-semibold text-primary-800 py-6">Registrarse</h1>
     <form
         id="sign-up-form"
-        class="max-w-sm space-y-3"
+    class="max-w-sm space-y-3 md:space-y-4 mx-auto"
         hx-post="/sign-up"
         hx-target="#sign-up-form"
         hx-swap="beforeend"
         x-data="{ showPassword: false }">
+        <p class="hidden md:block text-lg font-medium text-primary-800 pb-4">Registrate</p>
         <div class="flex gap-4">
             <div class="space-y-1" id="form-name-group">
                 <label for="name" class="text-primary-800 text-xs font-semibold uppercase">Nombres</label>

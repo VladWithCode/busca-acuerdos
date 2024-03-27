@@ -1745,6 +1745,24 @@ body {
     display: none;
   }
 
+  .md\:max-w-md {
+    max-width: 28rem;
+  }
+
+  .md\:max-w-screen-xl {
+    max-width: 1280px;
+  }
+
+  .md\:flex-auto {
+    flex: 1 1 auto;
+  }
+
+  .md\:space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+  }
+
   .md\:p-8 {
     padding: 2rem;
   }
