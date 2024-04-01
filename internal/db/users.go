@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"time"
 
@@ -45,7 +44,8 @@ func (u *User) CreateReportDir() error {
 	}
 	reportsDir := fmt.Sprintf("%vweb/static/reports/%v", tsjDir, u.Id)
 
-	err := os.MkdirAll(reportsDir, fs.ModeDir)
+	mode := os.FileMode(0644)
+	err := os.MkdirAll(reportsDir, mode)
 
 	if err != nil {
 		return err
