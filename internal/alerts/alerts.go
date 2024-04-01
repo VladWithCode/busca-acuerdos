@@ -93,7 +93,7 @@ func GenReportPdfWithData(userData db.AutoReportUser) (docPath string, err error
 		return
 	}
 
-	if err = os.Chmod(file.Name(), 0666); err != nil {
+	if err = os.Chmod(file.Name(), 0644); err != nil {
 		fmt.Println("Error changing file permissions", err)
 		return
 	}
