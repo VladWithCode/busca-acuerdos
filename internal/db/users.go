@@ -24,6 +24,7 @@ type User struct {
 	SubscriptionExpiresAt time.Time      `json:"subscriptionExpiresAt" db:"subscription_expires_at"`
 	EmailVerified         bool           `json:"emailVerified" db:"email_verified"`
 	PhoneVerified         bool           `json:"phoneVerified" db:"phone_verified"`
+	GoldenBoy             bool
 	Alerts                []Alert
 }
 
@@ -126,6 +127,7 @@ func GetUserById(id string) (*User, error) {
 		&user.Phone,
 		&user.EmailVerified,
 		&user.PhoneVerified,
+		&user.GoldenBoy,
 	)
 
 	if err != nil {
@@ -163,6 +165,7 @@ func GetUserByUsername(username string) (*User, error) {
 		&user.Phone,
 		&user.EmailVerified,
 		&user.PhoneVerified,
+		&user.GoldenBoy,
 	)
 
 	if err != nil {

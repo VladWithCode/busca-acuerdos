@@ -4,46 +4,53 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Buscar Acuerdos...</title>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap')
-        </style>
-        <link rel="stylesheet" href="/style.css" />
+		<style>
+			@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+		</style>
+		<link rel="stylesheet" href="/style.css" />
 		<script src="/htmx.min.js" defer></script>
-		<script
-			defer
-			src="/alpine.js"></script>
-        <script defer src="/gsap.js"></script>
+		<script defer src="/alpine.js"></script>
+		<script defer src="/gsap.js"></script>
 		<script src="/main.js"></script>
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                gsap.from("[data-menu-toggler]", { x: '100%' })
+		<script>
+			document.addEventListener('DOMContentLoaded', () => {
+				gsap.from('[data-menu-toggler]', { x: '100%' });
 
-                let navItems = document.querySelectorAll("[data-nav-selected]")
+				let navItems = document.querySelectorAll('[data-nav-selected]');
 
-                for (let it of navItems) {
-                    it.addEventListener('click', e => {
-                        let el = e.target;
-                        if (!el.dataset.navOption) {
-                            el = e.target.parentElement
-                        }
-                        let sel = document.querySelector('[data-nav-selected="true"]')
+				for (let it of navItems) {
+					it.addEventListener('click', e => {
+						let el = e.target;
+						if (!el.dataset.navOption) {
+							el = e.target.parentElement;
+						}
+						let sel = document.querySelector(
+							'[data-nav-selected="true"]'
+						);
 
-                        if (sel) {
-                            sel.classList.remove('bg-primary-900', 'text-stone-50')
-                            sel.dataset.navSelected = ""
-                        }
+						if (sel) {
+							sel.classList.remove(
+								'bg-primary-900',
+								'text-stone-50'
+							);
+							sel.dataset.navSelected = '';
+						}
 
-                        el.classList.add('bg-primary-900', 'text-stone-50')
-                        el.dataset.navSelected = 'true'
+						el.classList.add('bg-primary-900', 'text-stone-50');
+						el.dataset.navSelected = 'true';
 
-                        gsap.to("[data-mobile-menu]", { width: '0%', ease: 'power2.inOut', duration: .5 })
-                    })
-                }
-            })
-            function createSuccessModal(options) {
-                let message = options?.message || "¡Operación Exitosa!"
-                let btnLabel = options?.btnLabel || "Continuar"
-                let successModal = `<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50 opacity-0" data-confirm-modal="success" x-data="{}" x-ref="confirmModal">
+						gsap.to('[data-mobile-menu]', {
+							width: '0%',
+							ease: 'power2.inOut',
+							duration: 0.5,
+						});
+					});
+				}
+			});
+			function createSuccessModal(options) {
+				let message = options?.message || '¡Operación Exitosa!';
+				let btnLabel = options?.btnLabel || 'Continuar';
+				let successModal = `<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50 opacity-0" data-confirm-modal="success" x-data="{}" x-ref="confirmModal">
     <div class="w-4/5 max-w-screen-md bg-stone-100 rounded p-2 shadow shadow-stone-300 m-auto space-y-3 scale-0" data-confirm-modal-card="">
         <div class="h-32 w-32 mx-auto">
             <svg class="w-full h-full fill-emerald-500">
@@ -69,14 +76,14 @@
                 })
         ">${btnLabel}</button>
     </div>
-</div>`     
-                return successModal
-            }
-            
-            function createErrorModal(options) {
-                let message = options?.message || "Ocurrio un error inesperado"
-                let btnLabel = options?.btnLabel || "Continuar"
-                let errorModal = `<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50 opacity-0" data-confirm-modal="error" x-data="" x-ref="confirmModal">
+</div>`;
+				return successModal;
+			}
+
+			function createErrorModal(options) {
+				let message = options?.message || 'Ocurrio un error inesperado';
+				let btnLabel = options?.btnLabel || 'Continuar';
+				let errorModal = `<div class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50 opacity-0" data-confirm-modal="error" x-data="" x-ref="confirmModal">
     <div class="w-4/5 max-w-screen-md bg-stone-100 rounded p-2 shadow shadow-stone-300 m-auto space-y-3 scale-0" data-confirm-modal-card="">
         <div class="h-32 w-32 mx-auto">
             <svg class="h-full w-full fill-secondary-500">
@@ -100,142 +107,186 @@
                 })
         ">${btnLabel}</button>
     </div>
-</div>`
-                return errorModal
-            }
-        </script>
+</div>`;
+				return errorModal;
+			}
+		</script>
 
-        {{block "style" .}}
-        <style></style>
-        {{end}}
+		{{block "style" .}}
+		<style></style>
+		{{end}}
 	</head>
 	<body class="text-primary-900">
 		{{block "header" .}}
-        <header class="relative bg-stone-50 py-4 px-5 flex justify-between mx-auto" x-data="">
-            <h2 class="text-xl font-medium">TSJ Search</h2>
-            <nav class="hidden md:flex items-center gap-4">
-                <a class="font-medium text-lg" href="/">Inicio</a>
-                <a class="font-medium text-lg" href="#buscador">Buscador</a>
-                <!--
+		<header
+			class="relative bg-stone-50 py-4 px-5 flex justify-between mx-auto"
+			x-data="">
+			<h2 class="text-xl font-medium">TSJ Search</h2>
+			<nav class="hidden md:flex items-center gap-4">
+				<a class="font-medium text-lg" href="/">Inicio</a>
+				<a class="font-medium text-lg" href="#buscador">Buscador</a>
+				<!--
                 <a class="font-medium text-lg" href="/">Servicios</a>
                 <a class="font-medium text-lg" href="/">Precios</a>
                 <a class="font-medium text-lg" href="/">Contacto</a>
                 -->
-                <ul class="flex flex-initial gap-4 ml-12">
-                    {{with .User.Id}}
-                    <li class="px-2 py-1 underline underline-offset-2"><a href="/dashboard">Mi portal</a></li>
-                    <li class="px-2 py-1 underline underline-offset-2"><a href="/sign-out">Cerrar Sesion</a></li>
-                    {{else}}
-                    <li class="px-2 py-1 underline underline-offset-2"><a href="/iniciar-sesion">Iniciar Sesion</a></li>
-                    <li class="px-2 py-1 bg-primary-900 text-stone-50 rounded"><a href="/registrarse">Registrarse</a></li>
-                    {{end}}
-                </ul>
-            </nav>
+				<ul class="flex flex-initial gap-4 ml-12">
+					{{with .User.Id}}
+					<li class="px-2 py-1 underline underline-offset-2">
+						<a href="/dashboard">Mi portal</a>
+					</li>
+					<li class="px-2 py-1 underline underline-offset-2">
+						<a href="/sign-out">Cerrar Sesion</a>
+					</li>
+					{{else}}
+					<li class="px-2 py-1 underline underline-offset-2">
+						<a href="/iniciar-sesion">Iniciar Sesion</a>
+					</li>
+					<li class="px-2 py-1 bg-primary-900 text-stone-50 rounded">
+						<a href="/registrarse">Registrarse</a>
+					</li>
+					{{end}}
+				</ul>
+			</nav>
 
-            <!-- Nav toggler -->
-            <button 
-                class="relative ml-auto text-xs font-medium uppercase text-stone-50 bg-primary-900 px-2 rounded-full md:hidden"
-                @click="gsap.to('[data-mobile-menu]', { width: '100%', ease: 'power2.inOut', duration: .3 })"
-                data-menu-toggler="" >
-                menu
+			<!-- Nav toggler -->
+			<button
+				class="relative ml-auto text-xs font-medium uppercase text-stone-50 bg-primary-900 px-2 rounded-full md:hidden"
+				@click="gsap.to('[data-mobile-menu]', { width: '100%', ease: 'power2.inOut', duration: .3 })"
+				data-menu-toggler="">
+				menu {{/*
+				<div class="relative space-y-1">
+					<div class="w-6 h-0.5 bg-primary-900"></div>
+					<div class="w-6 h-0.5 bg-primary-900"></div>
+					<div class="w-6 h-0.5 bg-primary-900"></div>
+				</div>
+				*/}}
+			</button>
 
-                {{/* 
-                <div class="relative space-y-1">
-                    <div class="w-6 h-0.5 bg-primary-900"></div>
-                    <div class="w-6 h-0.5 bg-primary-900"></div>
-                    <div class="w-6 h-0.5 bg-primary-900"></div>
-                </div>
-                */}}
-            </button>
-
-            <!-- Mobile Navigation Menu -->
-            <div class="fixed h-svh inset-0 text-primary-800 overflow-hidden z-50 w-0 md:hidden" data-mobile-menu="" x-data="">
-                <div class="relative flex flex-col bg-stone-50 ml-auto h-full p-4 z-10 w-full">
-                    <div class="flex flex-initial items-center pb-4 relative z-10">
-                        <h3 class="text-xl font-bold">Menu</h3>
-                        <button class="ml-auto text-3xl font-bold" @click="gsap.to('[data-mobile-menu]', { width: 0, ease: 'power2.inOut', duration: .3 })">&times;</button>
-                    </div>
-                    <ul class="flex-auto space-y-2 text-lg font-medium">
-                        <li class="transition duration-300 bg-primary-900 text-stone-50 px-2 py-1 rounded" data-nav-selected="true" data-nav-option="0"><a class="" href="/">Inicio</a> </li>
-                        <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="1"><a class="" href="/#buscador">Buscador</a> </li>
-                        <!--
+			<!-- Mobile Navigation Menu -->
+			<div
+				class="fixed h-svh inset-0 text-primary-800 overflow-hidden z-50 w-0 md:hidden"
+				data-mobile-menu=""
+				x-data="">
+				<div
+					class="relative flex flex-col bg-stone-50 ml-auto h-full p-4 z-10 w-full">
+					<div
+						class="flex flex-initial items-center pb-4 relative z-10">
+						<h3 class="text-xl font-bold">Menu</h3>
+						<button
+							class="ml-auto text-3xl font-bold"
+							@click="gsap.to('[data-mobile-menu]', { width: 0, ease: 'power2.inOut', duration: .3 })">
+							&times;
+						</button>
+					</div>
+					<ul class="flex-auto space-y-2 text-lg font-medium">
+						<li
+							class="transition duration-300 bg-primary-900 text-stone-50 px-2 py-1 rounded"
+							data-nav-selected="true"
+							data-nav-option="0">
+							<a class="" href="/">Inicio</a>
+						</li>
+						<li
+							class="transition duration-300 px-2 py-1 rounded"
+							data-nav-selected=""
+							data-nav-option="1">
+							<a class="" href="/#buscador">Buscador</a>
+						</li>
+						<!--
                             <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="2"><a class="" href="/#servicios">Servicios</a> </li>
                             <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="3"><a class="" href="/#precios">Precios</a> </li>
                             <li class="transition duration-300 px-2 py-1 rounded" data-nav-selected="" data-nav-option="4"><a class="" href="/#contacto">Contacto</a> </li>
                         -->
-                    </ul>
-                    <ul class="flex flex-initial justify-between mt-auto">
-                        {{with .User.Id}}
-                        <li class="px-2 py-1 underline underline-offset-2"><a href="/dashboard">Mi portal</a></li>
-                        <li class="px-2 py-1 underline underline-offset-2"><a href="/sign-out">Cerrar Sesion</a></li>
-                        {{else}}
-                        <li class="px-2 py-1 underline underline-offset-2"><a href="/iniciar-sesion">Iniciar Sesion</a></li>
-                        <li class="px-2 py-1 bg-primary-900 text-stone-50 rounded"><a href="/registrarse">Registrarse</a></li>
-                        {{end}}
-                    </ul>
-                </div>
-            </div>
-        </header>
+					</ul>
+					<ul class="flex flex-initial justify-between mt-auto">
+						{{with .User.Id}}
+						<li class="px-2 py-1 underline underline-offset-2">
+							<a href="/dashboard">Mi portal</a>
+						</li>
+						<li class="px-2 py-1 underline underline-offset-2">
+							<a href="/sign-out">Cerrar Sesion</a>
+						</li>
+						{{else}}
+						<li class="px-2 py-1 underline underline-offset-2">
+							<a href="/iniciar-sesion">Iniciar Sesion</a>
+						</li>
+						<li
+							class="px-2 py-1 bg-primary-900 text-stone-50 rounded">
+							<a href="/registrarse">Registrarse</a>
+						</li>
+						{{end}}
+					</ul>
+				</div>
+			</div>
+		</header>
 
-        <!-- Breadcrumbs -->
-		{{end}} 
+		<!-- Breadcrumbs -->
+		{{end}} {{template "content" .}} {{block "footer" .}}
+		<footer class="max-w-full bg-primary-900 text-stone-50 hidden">
+			footer
+		</footer>
+		{{end}} {{block "modal-wrapper" .}}
+		<div id="modal-wrapper" class="left-0 top-0 z-50 invisible opacity-0">
+			<div
+				class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50 opacity-0"
+				x-data=""
+				x-ref="loadingModal"
+				data-loading-modal=""
+				hx-preserve>
+				<div
+					class="flex flex-col items-center justify-center w-4/5 aspect-square max-w-screen-md m-auto gap-6 scale-0"
+					data-loading-modal-card="">
+					<div
+						class="w-28 h-28 rounded-full border-transparent border-8 border-l-primary-700 origin-center animate-spin"
+						data-loading-spinner=""></div>
+					<p class="text-xl font-bold text-stone-50">Cargando...</p>
+				</div>
+			</div>
+		</div>
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				let isLoading = false;
+				document.body.addEventListener('custom:start-loading', e => {
+					let tl = gsap.timeline({
+						duration: 0.3,
+						ease: 'power2.inOut',
+					});
+					tl.set('#modal-wrapper', { visibility: 'visible' });
+					tl.set('[data-loading-modal]', { visibility: 'visible' });
+					tl.to('#modal-wrapper', { opacity: 1 });
+					tl.to('[data-loading-modal]', { opacity: 1 }, '<');
+					tl.to('[data-loading-modal-card]', { scale: 1 }, '<');
+					isLoading = true;
+				});
+				document.body.addEventListener('custom:finish-loading', e => {
+					if (isLoading) {
+						isLoading = false;
 
-        {{template "content" .}}
+						let tl = gsap.timeline({
+							duration: 0.3,
+							ease: 'power2.inOut',
+						});
+						tl.to('[data-loading-modal-card]', { scale: 0 });
+						tl.to('[data-loading-modal]', { opacity: 0 }, '<');
+						tl.set('[data-loading-modal]', {
+							visibility: 'hidden',
+						});
 
-        {{block "footer" .}}
-		<footer class="max-w-full bg-primary-900 text-stone-50 hidden">footer</footer>
+						if (!e.detail || e.detail.keepModalOpen === false) {
+							tl.to('#modal-wrapper', { opacity: 0 }, '<');
+							tl.set('#modal-wrapper', { visibility: 'hidden' });
+							return;
+						}
+					}
+
+					console.log(e);
+					let nextTween = e.detail.nextTween;
+					if (nextTween) {
+						nextTween.resume();
+					}
+				});
+			});
+		</script>
 		{{end}}
-
-        {{block "modal-wrapper" .}}
-        <div id="modal-wrapper" class="left-0 top-0 z-50 invisible opacity-0">
-            <div
-                class="fixed inset-0 h-screen w-screen bg-stone-900 bg-opacity-40 flex z-50 opacity-0" 
-                x-data="" 
-                x-ref="loadingModal" 
-                data-loading-modal=""
-                hx-preserve>
-                <div class="flex flex-col items-center justify-center w-4/5 aspect-square max-w-screen-md m-auto gap-6 scale-0" data-loading-modal-card="">
-                    <div class="w-28 h-28 rounded-full border-transparent border-8 border-l-primary-700 origin-center animate-spin" data-loading-spinner=""></div>
-                    <p class="text-xl font-bold text-stone-50">Cargando...</p>
-                </div>
-            </div>
-        </div>
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                let isLoading = false
-                document.body.addEventListener("custom:start-loading", e => {
-                    let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
-                    tl.set("#modal-wrapper", { visibility: "visible" })
-                    tl.set("[data-loading-modal]", { visibility: "visible" })
-                    tl.to("#modal-wrapper", { opacity: 1 })
-                    tl.to("[data-loading-modal]", { opacity: 1 }, "<")
-                    tl.to("[data-loading-modal-card]", { scale: 1 }, "<")
-                    isLoading = true
-                })
-                document.body.addEventListener("custom:finish-loading", e => {
-                    if (isLoading) {
-                        isLoading = false
-
-                        let tl = gsap.timeline({ duration: 0.3, ease: "power2.inOut" })
-                        tl.to("[data-loading-modal-card]", { scale: 0 })
-                        tl.to("[data-loading-modal]", { opacity: 0 }, "<")
-                        tl.set("[data-loading-modal]", { visibility: "hidden" })
-
-                        if (!e.detail || e.detail.keepModalOpen === false) {
-                            tl.to("#modal-wrapper", { opacity: 0 }, "<")
-                            tl.set("#modal-wrapper", { visibility: "hidden" })
-                            return;
-                        }
-                    }
-
-                    console.log(e)
-                    let nextTween = e.detail.nextTween
-                    if (nextTween) {
-                        nextTween.resume()
-                    }
-                })
-            })
-        </script>
-        {{end}}
 	</body>
 </html>
