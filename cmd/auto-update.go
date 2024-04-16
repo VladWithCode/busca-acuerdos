@@ -19,25 +19,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	stdErr, err := os.OpenFile(homePath+"/.local/log/tsj/auto-update.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Printf("Open Log err: %v\n", err)
+		fmt.Printf("Open log err: %v\n", err)
 		os.Exit(1)
 	}
 
-	stdOut, err := os.OpenFile(homePath+"/.local/log/auto-report.log/log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		fmt.Printf("Open Log err: %v\n", err)
-		os.Exit(1)
-	}
-
-	stdErr, err := os.OpenFile(homePath+"/.local/log/auto-report.log/error", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		fmt.Printf("Open Err err: %v\n", err)
-		os.Exit(1)
-	}
-
-	if stdOut != nil && stdErr != nil {
-		os.Stdout = stdOut
+	if stdErr != nil {
 		os.Stderr = stdErr
 	}
 
