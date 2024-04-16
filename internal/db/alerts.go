@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -59,6 +60,15 @@ type AutoReportUser struct {
 	Email    string
 	Phone    string
 	Alerts   []AutoReportAlert
+}
+
+func GetCaseParams(cK string) (caseId, natureCode string) {
+	params := strings.Split(cK, "+")
+
+	caseId = params[0]
+	natureCode = params[1]
+
+	return
 }
 
 func FindAlertById(id string) (*Alert, error) {
@@ -169,6 +179,41 @@ func FindAutoReportAlertsForUser(userId string) (*[]Alert, error) {
 	}
 
 	return &alerts, nil
+}
+
+func FindDistinctActiveAlerts() ([]*Alert, error) {
+	conn, err := GetPool()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	var alerts []*Alert
+
+	rows, err := conn.Query(
+		ctx,
+		"SELECT DISTINCT ON (case_id, nature_code) case_id, nature_code FROM alerts WHERE active = true ORDER BY nature_code, case_id DESC",
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var alert Alert
+		err = rows.Scan(&alert.CaseId, &alert.NatureCode)
+
+		if err != nil {
+			return nil, err
+		}
+
+		alerts = append(alerts, &alert)
+	}
+
+	return alerts, nil
 }
 
 func FindAutoReportAlertsWithUserData() ([]*AutoReportUser, error) {
@@ -287,6 +332,48 @@ func CreateAlert(userId string, caseId string, natureCode string) (*Alert, error
 	}
 
 	return &alert, nil
+}
+
+func UpdateAlertsForCases(caseData []*Doc) error {
+	conn, err := GetPool()
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	var queryBatch pgx.Batch
+
+	for _, c := range caseData {
+		queryBatch.Queue(
+			"UPDATE alerts SET last_updated_at = NOW(), last_checked_at = NOW(), last_accord = $1, last_accord_date = $2, nature = $3 WHERE case_id = $4 AND nature_code = $5",
+			c.Accord,
+			c.AccordDate,
+			c.Nature,
+			c.Case,
+			c.NatureCode,
+		).Exec(func(ct pgconn.CommandTag) error {
+			if ct.RowsAffected() == 0 {
+				return errors.New(fmt.Sprintf(
+					"No se pudo actualizar alerta para el caso %v+%v",
+					c.Case,
+					c.NatureCode,
+				))
+			}
+
+			return nil
+		})
+	}
+
+	err = conn.SendBatch(ctx, &queryBatch).Close()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func UpdateAlertAccords(alertsData []*Alert) error {
