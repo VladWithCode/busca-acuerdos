@@ -24,7 +24,7 @@ type User struct {
 	SubscriptionExpiresAt time.Time      `json:"subscriptionExpiresAt" db:"subscription_expires_at"`
 	EmailVerified         bool           `json:"emailVerified" db:"email_verified"`
 	PhoneVerified         bool           `json:"phoneVerified" db:"phone_verified"`
-	GoldenBoy             bool
+	GoldenBoy             bool           `db:"golden_boy"`
 	Alerts                []Alert
 }
 
