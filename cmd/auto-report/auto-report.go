@@ -4,25 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/joho/godotenv"
 	"github.com/vladwithcode/juzgados/internal/alerts"
 	"github.com/vladwithcode/juzgados/internal/db"
-	"github.com/vladwithcode/juzgados/internal/tsj"
 	"github.com/vladwithcode/juzgados/internal/whatsapp"
 )
-
-// subscriberMeta is a struct holding a pointer to the subscriber User
-// aswell as the position in User.Alerts of the alert it will update
-type subscriberMeta struct {
-	alertPos int
-	userPtr  *db.AutoReportUser
-}
-
-// subscriberMap is a caseKey (ie caseId-natureCode) to []subscriberMeta map
-type subscriberMap map[string][]subscriberMeta
 
 func main() {
 	homePath, err := os.UserHomeDir()
@@ -58,7 +46,6 @@ func main() {
 
 	err = godotenv.Load(fmt.Sprintf("%v/.env", tsjDir))
 
-
 	if err != nil {
 		log.Printf("Error: Couldn't load enviroment %v\n", err)
 		os.Exit(1)
@@ -83,52 +70,6 @@ func main() {
 	if err != nil {
 		log.Printf("Find alerts err: %v\n", err)
 		os.Exit(1)
-	}
-
-	subscribers := subscriberMap{}
-	caseKeys := []string{}
-
-	for _, user := range userAlerts {
-		for alertIdx, alert := range user.Alerts {
-			cK := alert.GetCaseKey()
-
-			suscriber := subscriberMeta{
-				alertPos: alertIdx,
-				userPtr:  user,
-			}
-
-			if _, ok := subscribers[cK]; ok {
-				subscribers[cK] = append(subscribers[cK], suscriber)
-			} else {
-				subscribers[cK] = []subscriberMeta{suscriber}
-			}
-		}
-	}
-
-	for k := range subscribers {
-		caseKeys = append(caseKeys, k)
-	}
-
-	resCases, err := tsj.GetCasesData(caseKeys, 30)
-
-	if err != nil {
-		log.Printf("GetCases err: %v\n", err)
-		os.Exit(1)
-	}
-
-	for _, c := range resCases.Docs {
-		caseId := strings.TrimSpace(strings.TrimLeft(c.Case, "0"))
-		cK := fmt.Sprintf("%v+%v", caseId, c.NatureCode)
-
-		if subs, ok := subscribers[cK]; ok {
-			for _, sub := range subs {
-				al := &sub.userPtr.Alerts[sub.alertPos]
-				al.LastAccord.String = c.Accord
-				al.LastAccord.Valid = true
-				al.LastAccordDate.Time = c.AccordDate
-				al.LastAccordDate.Valid = true
-			}
-		}
 	}
 
 	wg := sync.WaitGroup{}
