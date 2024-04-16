@@ -1,7 +1,9 @@
-cmd/main/main
-
 # Ignore files in cmd dir
-cmd/auto-report/auto-report
+cmd/*
+
+# Include files with .go in cmd
+!cmd/*.go
+!cmd/**/*.go
 
 # Ignore report dirs
 web/static/reports/*/
