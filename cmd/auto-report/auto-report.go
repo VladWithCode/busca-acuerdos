@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	log.Println("Start auto-report")
 	homePath, err := os.UserHomeDir()
 
 	if err != nil {
@@ -20,20 +21,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err != nil {
-		fmt.Printf("Open Log err: %v\n", err)
-		os.Exit(1)
-	}
-
 	stdOut, err := os.OpenFile(homePath+"/.local/log/auto-report.log/log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Printf("Open Log err: %v\n", err)
+		log.Printf("Open Log err: %v\n", err)
 		os.Exit(1)
 	}
 
 	stdErr, err := os.OpenFile(homePath+"/.local/log/auto-report.log/error", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Printf("Open Err err: %v\n", err)
+		log.Printf("Open Err err: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -57,6 +53,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	log.Println("Connecting to DB")
+
 	dbPool, err := db.Connect()
 
 	if err != nil {
@@ -65,6 +63,7 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	log.Println("Query auto report alerts")
 	userAlerts, err := db.FindAutoReportAlertsWithUserData()
 
 	if err != nil {
@@ -74,6 +73,7 @@ func main() {
 
 	wg := sync.WaitGroup{}
 
+	log.Println("Start report generation")
 	for _, user := range userAlerts {
 		wg.Add(1)
 		go func(user *db.AutoReportUser) {
