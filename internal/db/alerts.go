@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -37,7 +38,8 @@ type Alert struct {
 }
 
 func (a *Alert) GetCaseKey() string {
-	return a.CaseId + "+" + a.NatureCode
+	caseId := strings.TrimSpace(strings.TrimLeft(a.CaseId, "0"))
+	return fmt.Sprintf("%v+%v", caseId, a.NatureCode)
 }
 
 // type AutoReportAlerts map[string][]Alert
@@ -345,6 +347,8 @@ func UpdateAlertsForCases(caseData []*Doc) error {
 	defer cancel()
 
 	var queryBatch pgx.Batch
+	updatedCount := 0
+	var errs []error
 
 	for _, c := range caseData {
 		queryBatch.Queue(
@@ -356,11 +360,13 @@ func UpdateAlertsForCases(caseData []*Doc) error {
 			c.NatureCode,
 		).Exec(func(ct pgconn.CommandTag) error {
 			if ct.RowsAffected() == 0 {
-				return errors.New(fmt.Sprintf(
+				errs = append(errs, errors.New(fmt.Sprintf(
 					"No se pudo actualizar alerta para el caso %v+%v",
 					c.Case,
 					c.NatureCode,
-				))
+				)))
+			} else {
+				updatedCount++
 			}
 
 			return nil
@@ -368,6 +374,8 @@ func UpdateAlertsForCases(caseData []*Doc) error {
 	}
 
 	err = conn.SendBatch(ctx, &queryBatch).Close()
+
+	log.Printf("updatedCount: %v\n", updatedCount)
 
 	if err != nil {
 		return err
