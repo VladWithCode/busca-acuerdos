@@ -103,22 +103,21 @@ func GetCasesData(caseKeys []string, daysBack uint) (*GetCasesResult, error) {
 	wg := sync.WaitGroup{}
 
 	for _, cK := range caseKeys {
-		caseKey := cK
 		wg.Add(1)
-		go func() {
+		go func(cK string) {
 			defer wg.Done()
-			params := strings.Split(caseKey, "+")
+			params := strings.Split(cK, "+")
 			caseId, caseType := params[0], params[1]
 
 			doc, err := GetCaseData(caseId, caseType, nil, int(daysBack))
 
 			if err != nil {
-				result.AppendNotFound(caseKey)
+				result.AppendNotFound(cK)
 				return
 			}
 
 			result.AppendCase(doc)
-		}()
+		}(cK)
 	}
 
 	wg.Wait()
