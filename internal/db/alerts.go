@@ -336,10 +336,10 @@ func CreateAlert(userId string, caseId string, natureCode string) (*Alert, error
 	return &alert, nil
 }
 
-func UpdateAlertsForCases(caseData []*Doc) error {
+func UpdateAlertsForCases(caseData []*Doc) (err error, updatedCount int, errs []error) {
 	conn, err := GetPool()
 	if err != nil {
-		return err
+		return
 	}
 	defer conn.Release()
 
@@ -347,8 +347,6 @@ func UpdateAlertsForCases(caseData []*Doc) error {
 	defer cancel()
 
 	var queryBatch pgx.Batch
-	updatedCount := 0
-	var errs []error
 
 	for _, c := range caseData {
 		queryBatch.Queue(
@@ -378,10 +376,10 @@ func UpdateAlertsForCases(caseData []*Doc) error {
 	log.Printf("updatedCount: %v/%v\n", updatedCount, len(caseData))
 
 	if err != nil {
-		return err
+		return
 	}
 
-	return nil
+	return
 }
 
 func UpdateAlertAccords(alertsData []*Alert) error {
