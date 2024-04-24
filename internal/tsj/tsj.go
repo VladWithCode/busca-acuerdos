@@ -88,6 +88,7 @@ func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (
 
 	doc := DataToDoc(data)
 
+	doc.Case = caseId
 	doc.AccordDate = localDate
 	doc.NatureCode = caseType
 
