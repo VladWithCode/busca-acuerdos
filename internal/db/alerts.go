@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -343,7 +342,7 @@ func UpdateAlertsForCases(caseData []*Doc) (err error, updatedCount int, errs []
 	}
 	defer conn.Release()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
 	defer cancel()
 
 	var queryBatch pgx.Batch
