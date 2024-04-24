@@ -69,7 +69,7 @@ func main() {
 
 	log.Println("Fetching cases data")
 	resCases, err := tsj.GetCasesData(caseKeys, 15)
-	log.Printf("Found %v cases with updates\n", len(resCases.Docs))
+	log.Printf("Found data for %v cases\n", len(resCases.Docs))
 
 	if err != nil {
 		log.Printf("GetCases err: %v\n", err)
