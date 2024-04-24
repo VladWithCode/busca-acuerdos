@@ -61,7 +61,7 @@ func main() {
 	for _, al := range alerts {
 		cK := al.GetCaseKey()
 
-		if !keyMap[cK] {
+		if seen, ok := keyMap[cK]; !ok || !seen {
 			keyMap[cK] = true
 			caseKeys = append(caseKeys, cK)
 		}
@@ -69,6 +69,7 @@ func main() {
 
 	log.Println("Fetching cases data")
 	resCases, err := tsj.GetCasesData(caseKeys, 15)
+	log.Printf("Found %v cases with updates\n", len(resCases.Docs))
 
 	if err != nil {
 		log.Printf("GetCases err: %v\n", err)
@@ -76,7 +77,14 @@ func main() {
 	}
 
 	log.Println("Updating db alerts")
-	err = db.UpdateAlertsForCases(resCases.Docs)
+	err, updatedCount, errs := db.UpdateAlertsForCases(resCases.Docs)
+
+	log.Printf("Updated %v alerts successfully\n", updatedCount)
+
+	if len(errs) > 0 {
+		log.Printf("%v errors occurred while updating db", len(errs))
+		log.Printf("Last error: %v", errs[len(errs)-1])
+	}
 
 	if err != nil {
 		log.Printf("Update alerts err: %v\n", err)
