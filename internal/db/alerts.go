@@ -375,7 +375,7 @@ func UpdateAlertsForCases(caseData []*Doc) error {
 
 	err = conn.SendBatch(ctx, &queryBatch).Close()
 
-	log.Printf("updatedCount: %v\n", updatedCount)
+	log.Printf("updatedCount: %v/%v\n", updatedCount, len(caseData))
 
 	if err != nil {
 		return err
@@ -395,6 +395,7 @@ func UpdateAlertAccords(alertsData []*Alert) error {
 	defer cancel()
 
 	queryBatch := pgx.Batch{}
+	var errs []error
 
 	for _, alert := range alertsData {
 		queryBatch.Queue(
@@ -408,7 +409,7 @@ func UpdateAlertAccords(alertsData []*Alert) error {
 		).Exec(func(ct pgconn.CommandTag) error {
 			if ct.RowsAffected() == 0 {
 				cK := alert.CaseId + "+" + alert.NatureCode
-				return errors.New(fmt.Sprintf("No se pudo actualizar alerta para el caso %v", cK))
+				errs = append(errs, errors.New(fmt.Sprintf("No se pudo actualizar alerta para el caso %v", cK)))
 			}
 
 			return nil

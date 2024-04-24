@@ -46,8 +46,9 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	log.Println("Query active alerts")
+	log.Println("Querying active alerts")
 	alerts, err := db.FindDistinctActiveAlerts()
+	log.Printf("Found %v active alerts", len(alerts))
 
 	if err != nil {
 		log.Printf("Find alerts err: %v\n", err)
@@ -66,15 +67,15 @@ func main() {
 		}
 	}
 
-	log.Println("Fetch cases data")
-	resCases, err := tsj.GetCasesData(caseKeys, 0)
+	log.Println("Fetching cases data")
+	resCases, err := tsj.GetCasesData(caseKeys, 15)
 
 	if err != nil {
 		log.Printf("GetCases err: %v\n", err)
 		os.Exit(1)
 	}
 
-	log.Println("Update db alerts")
+	log.Println("Updating db alerts")
 	err = db.UpdateAlertsForCases(resCases.Docs)
 
 	if err != nil {
