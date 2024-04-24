@@ -52,7 +52,18 @@ func searchCase(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 func searchCases(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	cases := r.URL.Query()["cases"]
-	result, err := tsj.GetCasesData(cases, tsj.DEFAULT_DAYS_BACK)
+	goBackStr := r.URL.Query()["goBack"]
+
+	var goBack int
+	if len(goBackStr) != 0 && goBackStr[0] != "" {
+		if num, err := strconv.Atoi(goBackStr[0]); err == nil {
+			goBack = num
+		}
+	} else {
+		goBack = tsj.DEFAULT_DAYS_BACK
+	}
+
+	result, err := tsj.GetCasesData(cases, uint(goBack))
 
 	if len(result.NotFoundKeys) == len(cases) {
 		respondWithError(w, 500, "No se encontró ningun documento solicitado")
