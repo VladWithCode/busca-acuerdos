@@ -186,7 +186,7 @@ func FindAutoReportAlertsForUser(userId string) (*[]Alert, error) {
 	return &alerts, nil
 }
 
-func FindDistinctActiveAlerts() ([]*Alert, error) {
+func FindDistinctActiveAlerts(searchDate time.Time) ([]*Alert, error) {
 	conn, err := GetPool()
 	if err != nil {
 		return nil, err
@@ -200,7 +200,8 @@ func FindDistinctActiveAlerts() ([]*Alert, error) {
 
 	rows, err := conn.Query(
 		ctx,
-		"SELECT DISTINCT ON (case_id, nature_code) case_id, nature_code FROM alerts WHERE active = true ORDER BY nature_code, case_id DESC",
+		"SELECT DISTINCT ON (case_id, nature_code) case_id, nature_code FROM alerts WHERE active = true AND last_accord_date < $1 ORDER BY nature_code, case_id DESC",
+		searchDate,
 	)
 
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/vladwithcode/juzgados/internal/db"
@@ -47,7 +48,7 @@ func main() {
 	defer dbPool.Close()
 
 	log.Println("Querying active alerts")
-	alerts, err := db.FindDistinctActiveAlerts()
+	alerts, err := db.FindDistinctActiveAlerts(time.Now())
 	log.Printf("Found %v active alerts", len(alerts))
 
 	if err != nil {
@@ -68,7 +69,7 @@ func main() {
 	}
 
 	log.Println("Fetching cases data")
-	resCases, err := tsj.GetCasesData(caseKeys, 15)
+	resCases, err := tsj.GetCasesData(caseKeys, 0)
 	log.Printf("Found data for %v cases\n", len(resCases.Docs))
 
 	if err != nil {
