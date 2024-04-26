@@ -52,8 +52,8 @@ func CreateAlert(w http.ResponseWriter, r *http.Request, _ httprouter.Params, au
 	doc, _ := tsj.GetCaseData(caseId, natureCode, nil, tsj.DEFAULT_DAYS_BACK)
 	alert := db.Alert{
 		UserId:        userId,
-		CaseId:        caseId,
-		NatureCode:    natureCode,
+		CaseId:        db.TrimField(caseId),
+		NatureCode:    db.TrimField(natureCode),
 		LastCheckedAt: time.Now(),
 		LastUpdatedAt: time.Now(),
 		Active:        true,

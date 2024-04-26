@@ -63,6 +63,10 @@ type AutoReportUser struct {
 	Alerts   []AutoReportAlert
 }
 
+func TrimField(val string) string {
+	return strings.TrimSpace(strings.TrimLeft(val, "0"))
+}
+
 func GetCaseParams(cK string) (caseId, natureCode string) {
 	params := strings.Split(cK, "+")
 
@@ -349,7 +353,7 @@ func UpdateAlertsForCases(caseData []*Doc) (err error, updatedCount int, errs []
 
 	for _, c := range caseData {
 		queryBatch.Queue(
-			"UPDATE alerts SET last_updated_at = NOW(), last_accord = $1, last_accord_date = $2, nature = $3 WHERE case_id = $4 AND nature_code = $5",
+			"UPDATE alerts SET last_checked_at = NOW(), last_accord = $1, last_accord_date = $2, nature = $3 WHERE case_id = $4 AND nature_code = $5",
 			c.Accord,
 			c.AccordDate,
 			c.Nature,
