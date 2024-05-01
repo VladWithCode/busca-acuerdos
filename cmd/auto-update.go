@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +13,9 @@ import (
 )
 
 func main() {
+	daysBack := flag.Int("d", 0, "Number of days to search in the past")
+	flag.Parse()
+
 	log.Println("Start alert auto-update")
 	homePath, err := os.UserHomeDir()
 
@@ -69,7 +73,7 @@ func main() {
 	}
 
 	log.Println("Fetching cases data")
-	resCases, err := tsj.GetCasesData(caseKeys, 0)
+	resCases, err := tsj.GetCasesData(caseKeys, uint(*daysBack))
 	log.Printf("Found data for %v cases\n", len(resCases.Docs))
 
 	if err != nil {
