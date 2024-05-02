@@ -17,7 +17,7 @@ const (
 	IDX_LEN    = 7
 	CASE_LEN   = 15
 	NATURE_LEN = 23
-	ACCORD_LEN = 49
+	ACCORD_LEN = 100
 )
 
 const DEFAULT_DAYS_BACK = 62
@@ -50,7 +50,7 @@ func (r *GetCasesResult) AppendNotFound(key string) {
 }
 
 func GenRegExp(caseId string) (*regexp.Regexp, error) {
-	return regexp.Compile(fmt.Sprintf(`(?m)^(\d[^\n]*%v\s[^\n][^\d]*)$`, caseId))
+	return regexp.Compile(fmt.Sprintf(`(?m)^(\d+.+%v[^\n]+(?:[\n][^\d].*)+)`, caseId))
 }
 
 func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (*db.Doc, error) {
@@ -163,6 +163,7 @@ func FetchAndReadDoc(caseId, searchDate, caseType string) ([]byte, error) {
 
 func DataToDoc(data []byte) *db.Doc {
 	lineExp := regexp.MustCompile("(?m)\n")
+	pageExp := regexp.MustCompile(`PAGINA :[^\n]+/`)
 	rows := lineExp.Split(string(data), -1)
 
 	doc := db.Doc{}
@@ -176,6 +177,14 @@ func DataToDoc(data []byte) *db.Doc {
 	charCounts := []int{0, 0, 0, ACCORD_LEN}
 
 	for rowidx, str := range rows {
+		if len(str) == 0 {
+			break
+		}
+
+		if pageExp.Match([]byte(str)) {
+			break
+		}
+
 		currentCol = 0
 		seenTwoSpace = false
 		prevChar = 0
@@ -185,10 +194,6 @@ func DataToDoc(data []byte) *db.Doc {
 		tempCols[3] = []byte{}
 
 		for charIdx, char := range str {
-			if char == '\n' {
-				break
-			}
-
 			if seenTwoSpace && char != ' ' && currentCol < 3 {
 				currentCol++
 				seenTwoSpace = false
@@ -212,7 +217,7 @@ func DataToDoc(data []byte) *db.Doc {
 			if char == ' ' && str[ensureSafeIndex(charIdx+1, len(str))] != ' ' && colLen >= maxLen && currentCol < 3 {
 				currentCol++
 				seenTwoSpace = false
-				prevChar = 0
+				prevChar = 0 // byte(0) == ''
 				continue
 			}
 
@@ -231,7 +236,7 @@ func DataToDoc(data []byte) *db.Doc {
 		cols[1] = append(cols[1], tempCols[1]...)
 		cols[2] = append(cols[2], tempCols[2]...)
 		cols[3] = append(cols[3], tempCols[3]...)
-		cols[3] = append(cols[3], byte('\n'))
+		cols[3] = append(cols[3], byte(' '))
 	}
 
 	doc.Case = strings.TrimSpace(strings.TrimLeft(string(cols[1]), "0"))
