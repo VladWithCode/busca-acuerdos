@@ -18,13 +18,11 @@ func GetFile(date, caseType string) (pdfData []byte, err error) {
 	response, err := http.Get(fetchUrl)
 
 	if err != nil {
-		fmt.Printf("Error finding file on date %v: %v\n", date, err)
 		return nil, err
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode < 200 || response.StatusCode >= 400 {
-		fmt.Printf("Error finding file on date %v: %v\n", date, response.Body)
 		return nil, errors.New("No se encontró documento para la fecha solicitada")
 	}
 
