@@ -14,7 +14,19 @@ import (
 
 func main() {
 	daysBack := flag.Int("d", 0, "Number of days to search in the past")
+	startDateStr := flag.String("start-date", "", "The date auto-update will start searching from (it searches from this data backwards)")
 	flag.Parse()
+	startDate := time.Now()
+	var err error
+
+	if *startDateStr != "" {
+		startDate, err = time.Parse("2006-01-02", *startDateStr)
+
+		if err != nil {
+			log.Printf("Start Date is an invalid. Provide a date in format \"YYYY-mm-dd\"")
+			os.Exit(1)
+		}
+	}
 
 	log.Println("Start alert auto-update")
 	homePath, err := os.UserHomeDir()
@@ -73,7 +85,7 @@ func main() {
 	}
 
 	log.Println("Fetching cases data")
-	resCases, err := tsj.GetCasesData(caseKeys, uint(*daysBack))
+	resCases, err := tsj.GetCasesData(caseKeys, uint(*daysBack), startDate)
 	log.Printf("Found data for %v cases\n", len(resCases.Docs))
 
 	if err != nil {

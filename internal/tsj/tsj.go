@@ -31,6 +31,16 @@ func (e *NotFoundError) Error() string {
 	return e.Msg
 }
 
+/*
+ *
+ */
+type MultiCaseSearch struct {
+	TribunalMap map[string][]string
+	FoundDocs   []*db.Doc
+
+	mux sync.Mutex
+}
+
 type GetCasesResult struct {
 	Docs         []*db.Doc
 	NotFoundKeys []string
@@ -68,6 +78,7 @@ func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (
 	for i := 0; i <= daysBack; i++ {
 		y, m, d := localDate.Date()
 		date := fmt.Sprintf("%d%d%d", d, m, y)
+		fmt.Printf("Fetching for file on date %v for caseType %v\n", localDate, caseType)
 		data, err = FetchAndReadDoc(caseId, date, caseType)
 
 		if data != nil {
@@ -95,7 +106,7 @@ func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (
 	return doc, nil
 }
 
-func GetCasesData(caseKeys []string, daysBack uint) (*GetCasesResult, error) {
+func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCasesResult, error) {
 	result := GetCasesResult{
 		Docs:         []*db.Doc{},
 		NotFoundKeys: []string{},
@@ -110,7 +121,7 @@ func GetCasesData(caseKeys []string, daysBack uint) (*GetCasesResult, error) {
 			params := strings.Split(cK, "+")
 			caseId, caseType := params[0], params[1]
 
-			doc, err := GetCaseData(caseId, caseType, nil, int(daysBack))
+			doc, err := GetCaseData(caseId, caseType, &startDate, int(daysBack))
 
 			if err != nil {
 				result.AppendNotFound(cK)
