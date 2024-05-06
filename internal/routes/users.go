@@ -48,6 +48,9 @@ func RenderDashboard(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 
 	templ, err := template.New("layout.html").Funcs(template.FuncMap{
 		"FormatDate": internal.FormatDate,
+		"GetNature": func(code string) string {
+			return internal.CodesMap[code]
+		},
 	}).ParseFiles("web/templates/layout.html", "web/templates/alert-card.html", "web/templates/dashboard.html")
 
 	if err != nil {

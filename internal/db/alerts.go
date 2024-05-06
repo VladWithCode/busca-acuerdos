@@ -128,7 +128,7 @@ func FindAlertsByUser(userId string, findActive bool) ([]*Alert, error) {
 	} else {
 		rows, err = conn.Query(
 			ctx,
-			"SELECT * FROM alerts WHERE user_id = $1",
+			"SELECT * FROM alerts WHERE user_id = $1 ORDER BY last_accord_date DESC NULLS LAST",
 			userId,
 		)
 	}
