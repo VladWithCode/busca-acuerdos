@@ -31,12 +31,15 @@ func (e *NotFoundError) Error() string {
 	return e.Msg
 }
 
-/*
- *
- */
+// For optimal doc search, this struct holds information about the cases pending search
+// as well as the Docs generated for the cases found.
+// This way, multiple case searches can be done on the same file fetched from TSJ
+// avoiding multiple net requests for the same file
+// PendingCases maps in the form of [caseType]: [caseKey1, caseKey2, ..., caseKeyN]
+// e.g. [mer2]: [12/2003, 45/2006]
 type MultiCaseSearch struct {
-	TribunalMap map[string][]string
-	FoundDocs   []*db.Doc
+	PendingCases map[string][]string
+	Docs         []*db.Doc
 
 	mux sync.Mutex
 }
@@ -78,7 +81,6 @@ func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (
 	for i := 0; i <= daysBack; i++ {
 		y, m, d := localDate.Date()
 		date := fmt.Sprintf("%d%d%d", d, m, y)
-		fmt.Printf("Fetching for file on date %v for caseType %v\n", localDate, caseType)
 		data, err = FetchAndReadDoc(caseId, date, caseType)
 
 		if data != nil {
@@ -106,7 +108,7 @@ func GetCaseData(caseId, caseType string, searchDate *time.Time, daysBack int) (
 	return doc, nil
 }
 
-func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCasesResult, error) {
+func GetCasesDataV1(caseKeys []string, daysBack uint, startDate time.Time) (*GetCasesResult, error) {
 	result := GetCasesResult{
 		Docs:         []*db.Doc{},
 		NotFoundKeys: []string{},
@@ -135,6 +137,72 @@ func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCa
 	wg.Wait()
 
 	return &result, nil
+}
+
+// This approach attempts to improve efficency
+// by reducing the net request for TSJ reports
+// By only fetching the file for a specified
+// date and caseType once and then executing
+// all the searches for the pending case Ids
+// GetCasesDataV2
+func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCasesResult, error) {
+	searchData := MultiCaseSearch{
+		PendingCases: genCaseMap(caseKeys),
+	}
+	wg := sync.WaitGroup{}
+
+	for cType, cIds := range searchData.PendingCases {
+		wg.Add(1)
+		go func(cType string, cIds []string, startDate time.Time, daysBack uint) {
+			defer wg.Done()
+			var pendingIds []string
+			iDaysBack := int(daysBack + 1)
+
+			for i := 0; i <= iDaysBack; i++ {
+				tsjFile, err := reader.Reader(startDate.Format("212006"), cType)
+
+				// When an error is found, skip to next try
+				if err != nil {
+					// Only print errors for the last try
+					if i == iDaysBack {
+						fmt.Printf("[%v on date %v] Failed to find file %v\n", cType, startDate.Format("02/01/06"), err)
+					}
+					continue
+				}
+
+				if tsjFile != nil {
+					for _, cId := range cIds {
+						searchExp, _ := GenRegExp(cId)
+						idxs := searchExp.FindIndex(*tsjFile)
+
+						if len(idxs) == 0 {
+							pendingIds = append(pendingIds, cId)
+							continue
+						}
+
+						start, end := idxs[0], idxs[1]
+
+						doc := DataToDoc((*tsjFile)[start:end])
+
+						searchData.Docs = append(searchData.Docs, doc)
+					}
+				}
+
+				if len(pendingIds) == 0 {
+					break
+				}
+
+				cIds = pendingIds
+				startDate = startDate.AddDate(0, 0, -1)
+			}
+		}(cType, cIds, startDate, daysBack)
+	}
+
+	wg.Wait()
+
+	return &GetCasesResult{
+		Docs: searchData.Docs,
+	}, nil
 }
 
 func FetchAndReadDoc(caseId, searchDate, caseType string) ([]byte, error) {
@@ -255,6 +323,23 @@ func DataToDoc(data []byte) *db.Doc {
 	doc.Accord = strings.TrimSpace(string(cols[3]))
 
 	return &doc
+}
+
+func genCaseMap(caseKeys []string) map[string][]string {
+	caseMap := map[string][]string{}
+
+	for _, cK := range caseKeys {
+		params := strings.Split(cK, "+")
+		cId, cType := params[0], params[1]
+
+		if _, ok := caseMap[cType]; !ok {
+			caseMap[cType] = []string{}
+		}
+
+		caseMap[cType] = append(caseMap[cType], cId)
+	}
+
+	return caseMap
 }
 
 func ensureSafeIndex(idx, ln int) int {
