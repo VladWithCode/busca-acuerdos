@@ -291,7 +291,7 @@ func UpdateAlertsForUser(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		alertMap[cK] = alert
 	}
 
-	docs, err := tsj.GetCasesData(caseKeys, tsj.DEFAULT_DAYS_BACK)
+	docs, err := tsj.GetCasesData(caseKeys, tsj.DEFAULT_DAYS_BACK, time.Now())
 
 	if err != nil {
 		fmt.Printf("[GetCasesData err]: %v\n", err)
@@ -432,7 +432,7 @@ func TestAllAlerts(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		caseKeys = append(caseKeys, k)
 	}
 
-	resCases, err := tsj.GetCasesData(caseKeys, 30)
+	resCases, err := tsj.GetCasesData(caseKeys, 30, time.Now())
 
 	if err != nil {
 		fmt.Printf("GetCases err: %v\n", err)

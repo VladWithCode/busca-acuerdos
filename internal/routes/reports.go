@@ -109,8 +109,8 @@ func FindAlerts(userId string) (*[]db.Alert, error) {
 		caseKeys = append(caseKeys, cK)
 		foundAlertMap[cK] = &alert
 	}
-	fmt.Printf("Fetching for %d cases\n", len(caseKeys))
-	result, err := tsj.GetCasesData(caseKeys, tsj.DEFAULT_DAYS_BACK)
+
+	result, err := tsj.GetCasesData(caseKeys, tsj.DEFAULT_DAYS_BACK, time.Now())
 
 	if err != nil {
 		return nil, err

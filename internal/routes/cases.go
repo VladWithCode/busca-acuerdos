@@ -63,7 +63,7 @@ func searchCases(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		goBack = tsj.DEFAULT_DAYS_BACK
 	}
 
-	result, err := tsj.GetCasesData(cases, uint(goBack))
+	result, err := tsj.GetCasesData(cases, uint(goBack), time.Now())
 
 	if len(result.NotFoundKeys) == len(cases) {
 		respondWithError(w, 500, "No se encontró ningun documento solicitado")
