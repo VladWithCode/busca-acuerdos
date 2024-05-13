@@ -175,7 +175,7 @@ func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCa
 						searchExp, _ := GenRegExp(cId)
 						idxs := searchExp.FindIndex(*tsjFile)
 
-						if len(idxs) == 0 {
+						if idxs == nil {
 							pendingIds = append(pendingIds, cId)
 							continue
 						}
@@ -183,8 +183,11 @@ func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCa
 						start, end := idxs[0], idxs[1]
 
 						doc := DataToDoc((*tsjFile)[start:end])
+						doc.NatureCode = cType
 
+						searchData.mux.Lock()
 						searchData.Docs = append(searchData.Docs, doc)
+						searchData.mux.Unlock()
 					}
 				}
 

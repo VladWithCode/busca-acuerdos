@@ -23,7 +23,7 @@ func main() {
 		startDate, err = time.Parse("2006-01-02", *startDateStr)
 
 		if err != nil {
-			log.Printf("Start Date is an invalid. Provide a date in format \"YYYY-mm-dd\"")
+			log.Printf("Start Date is invalid. Provide a date in format \"YYYY-mm-dd\"")
 			os.Exit(1)
 		}
 	}
@@ -95,7 +95,6 @@ func main() {
 
 	log.Println("Updating db alerts")
 	err, updatedCount, errs := db.UpdateAlertsForCases(resCases.Docs)
-
 	log.Printf("Updated %v alerts successfully\n", updatedCount)
 
 	if len(errs) > 0 {
