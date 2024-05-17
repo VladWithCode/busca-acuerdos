@@ -347,7 +347,7 @@ func UpdateAlertsForCases(caseData []*Doc) (err error, updatedCount int, errs []
 	}
 	defer conn.Release()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
 
 	var queryBatch pgx.Batch
@@ -378,6 +378,7 @@ func UpdateAlertsForCases(caseData []*Doc) (err error, updatedCount int, errs []
 	err = conn.SendBatch(ctx, &queryBatch).Close()
 
 	if err != nil {
+		fmt.Printf("Batch update error: %v\n", err)
 		return
 	}
 

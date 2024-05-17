@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+	"github.com/vladwithcode/juzgados/internal"
 	"github.com/vladwithcode/juzgados/internal/db"
 	"github.com/vladwithcode/juzgados/internal/reader"
 )
@@ -155,8 +156,8 @@ func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCa
 		wg.Add(1)
 		go func(cType string, cIds []string, startDate time.Time, daysBack uint) {
 			defer wg.Done()
-			var pendingIds []string
-			iDaysBack := int(daysBack + 1)
+			var pendingIds = internal.Set{}
+			iDaysBack := int(daysBack)
 
 			for i := 0; i <= iDaysBack; i++ {
 				tsjFile, err := reader.Reader(startDate.Format("212006"), cType)
@@ -165,8 +166,10 @@ func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCa
 				if err != nil {
 					// Only print errors for the last try
 					if i == iDaysBack {
-						fmt.Printf("[%v on date %v] Failed to find file %v\n", cType, startDate.Format("02/01/06"), err)
+						fmt.Printf("[%v on date %v] Failed to find file: %v\n", cType, startDate.Format("02/01/06"), err)
 					}
+
+					startDate = startDate.AddDate(0, 0, -1)
 					continue
 				}
 
@@ -176,13 +179,16 @@ func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCa
 						idxs := searchExp.FindIndex(*tsjFile)
 
 						if idxs == nil {
-							pendingIds = append(pendingIds, cId)
+							if !pendingIds.Contains(cId) {
+								pendingIds.Add(cId)
+							}
 							continue
 						}
 
 						start, end := idxs[0], idxs[1]
 
 						doc := DataToDoc((*tsjFile)[start:end])
+						doc.Case = strings.TrimSpace(cId)
 						doc.NatureCode = cType
 
 						searchData.mux.Lock()
@@ -192,10 +198,11 @@ func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCa
 				}
 
 				if len(pendingIds) == 0 {
+					fmt.Printf("cIds: %v\n", cIds)
 					break
 				}
 
-				cIds = pendingIds
+				cIds = pendingIds.Elements()
 				startDate = startDate.AddDate(0, 0, -1)
 			}
 		}(cType, cIds, startDate, daysBack)
