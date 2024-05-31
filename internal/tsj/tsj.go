@@ -190,6 +190,7 @@ func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCa
 						doc := DataToDoc((*tsjFile)[start:end])
 						doc.Case = strings.TrimSpace(cId)
 						doc.NatureCode = cType
+						doc.AccordDate = startDate
 
 						searchData.mux.Lock()
 						searchData.Docs = append(searchData.Docs, doc)
@@ -198,7 +199,6 @@ func GetCasesData(caseKeys []string, daysBack uint, startDate time.Time) (*GetCa
 				}
 
 				if len(pendingIds) == 0 {
-					fmt.Printf("cIds: %v\n", cIds)
 					break
 				}
 
